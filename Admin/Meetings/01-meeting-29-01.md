@@ -14,7 +14,7 @@
 - Nuhur
 - Dmitry
 - Shirwa
-- Ackshay
+- Aju
 - Nalah
 
 ---
@@ -34,7 +34,7 @@
 
 ## Decisions Made
 -  Provisional name and logo chosen
--  Project Binder set up on Github
+-  Project Binder set up on GitHub
 -  Primary and secondary roles assigned
 -  Client Interview preparation plan made
 
@@ -44,10 +44,11 @@
 
 | Task | Assigned To | Deadline |
 |------|------------|----------|
-| Read project brief and write Client Interview questoins  | All members |04/02/26 10:30|
+| Read project brief and write Client Interview questions  | All members |04/02/26 10:30|
  
 ---
 
 ## Next Meeting
 **Date:**  04/02/26  
-**Time:** 10:30
+**Time:** 10:30  
+**Location:** CS Lounge
