@@ -2,7 +2,8 @@
 
 **Topic:**  SyDi's Team Meeting  
 **Time:**  Every week on Wednesday, 10:00 AM London  
-        
+
+---     
 
 **Join Zoom Meeting**  
 https://city-ac-uk.zoom.us/j/85228355188
