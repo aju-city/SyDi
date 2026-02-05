@@ -54,6 +54,7 @@
 Draft Component Diagram for IPOS-PU Subsystem | Nalah | 09/02/26 |
 Communicate with Team A & B to exchange common interfaces | Nuhur | 11/02/26 |
 Integrate additional interfaces and refine the draft based on new information | Nuhur | TBD |
+Share notes of Client Interview | Dmitry | N/A |
 
  
 ---
