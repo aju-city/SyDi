@@ -12,8 +12,8 @@
 
 ## Attendees
 - Nuhur
-- Aju
-- Dimitry  
+- Arjun
+- Dmitry  
 - Nalah
 
 ---
@@ -50,7 +50,7 @@
 
 | Task | Assigned To | Deadline |
 |------|------------|----------|
-| Identify actors, stakeholders, and the interfaces IPOS-PU interacts with | Nalah | 09/02/26 |
+| Identify actors, stakeholders, and the interfaces IPOS-PU interacts with | Arjun| 07/02/26 |
 Draft Component Diagram for IPOS-PU Subsystem | Nalah | 09/02/26 |
 Communicate with Team A & B to exchange common interfaces | Nuhur | 11/02/26 |
 Integrate additional interfaces and refine the draft based on new information | Nuhur | TBD |
