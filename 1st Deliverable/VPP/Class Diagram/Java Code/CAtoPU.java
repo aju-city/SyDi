@@ -1,6 +1,6 @@
 package IPOS_PU.IPOS_PU;
 
-public class CAtoPU {
+public class CAtoPU implements I_CAtoPU {
 
 	/**
 	 * 

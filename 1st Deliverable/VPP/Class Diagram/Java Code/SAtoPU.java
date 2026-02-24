@@ -1,6 +1,6 @@
 package IPOS_PU.IPOS_PU;
 
-public class SAtoPU {
+public class SAtoPU implements I_SAtoPU {
 
 	/**
 	 * 
