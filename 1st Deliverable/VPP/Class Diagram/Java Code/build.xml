@@ -1,14 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	Apache Ant build file for IPOS Java components
+	This build file compiles all Java source files in the current directory
+	and outputs the compiled classes to the 'classes' directory.
+-->
 <project basedir="." default="build">
+	<!-- 
+		Classpath configuration for the build process
+		Includes the classes directory for compiled output
+	-->
 	<path id="build.classpath">
 		<pathelement location="classes"/>
 	</path>
+	
+	<!-- 
+		Initialization target
+		Creates the necessary directories for the build process
+	-->
 	<target name="init">
 		<mkdir dir="classes"/>
 	</target>
+	
+	<!-- 
+		Clean target
+		Removes all build artifacts and directories
+		Use this to start a fresh build
+	-->
 	<target name="clean">
 		<delete dir="classes"/>
 	</target>
+	
+	<!-- 
+		Main build target
+		Compiles all Java source files using Java 1.4 compatibility
+		Depends on the init target to ensure directories exist
+	-->
 	<target depends="init" name="build">
 		<javac srcdir="." destdir="classes" source="1.4">
 			<classpath refid="build.classpath"/>
