@@ -69,7 +69,7 @@ private void styleComponents() {
 
     contentPanel.setOpaque(false);
     contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
-    contentPanel.setPreferredSize(new Dimension(540, 540));
+    contentPanel.setPreferredSize(new Dimension(800, 720));
     contentPanel.removeAll();
     mainPanel.add(contentPanel);
 
@@ -79,27 +79,27 @@ private void styleComponents() {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             int cx = getWidth() / 2, cy = getHeight() / 2;
-            for (int x : new int[]{-14, 0, 14}) {
+            for (int x : new int[]{-22, 0, 22}) {
                 g2.setColor(new Color(37, 99, 168, 70));
-                g2.fillOval(cx + x - 5, cy - 5, 10, 10);
+                g2.fillOval(cx + x - 8, cy - 8, 16, 16);
                 g2.setColor(NEON_LT);
-                g2.fillOval(cx + x - 3, cy - 3, 6, 6);
+                g2.fillOval(cx + x - 5, cy - 5, 10, 10);
             }
             g2.dispose();
         }
     };
     accent.setOpaque(false);
-    accent.setPreferredSize(new Dimension(60, 20));
-    accent.setMaximumSize(new Dimension(60, 20));
+    accent.setPreferredSize(new Dimension(100, 36));
+    accent.setMaximumSize(new Dimension(100, 36));
     accent.setAlignmentX(Component.CENTER_ALIGNMENT);
 
     JLabel eyebrow = new JLabel("IPOS · PU SYSTEM");
-    eyebrow.setFont(new Font("Segoe UI", Font.BOLD, 11));
+    eyebrow.setFont(new Font("Segoe UI", Font.BOLD, 18));
     eyebrow.setForeground(NEON);
     eyebrow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
     titleLabel.setText("SyDi Online");
-    titleLabel.setFont(new Font("Trebuchet MS", Font.BOLD, 58));
+    titleLabel.setFont(new Font("Trebuchet MS", Font.BOLD, 110));
     titleLabel.setForeground(WHITE);
     titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
     titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -116,12 +116,12 @@ private void styleComponents() {
             g2.dispose();
         }
     };
-    titleLine2.setFont(new Font("Trebuchet MS", Font.BOLD, 58));
+    titleLine2.setFont(new Font("Trebuchet MS", Font.BOLD, 110));
     titleLine2.setForeground(NEON_LT);
     titleLine2.setAlignmentX(Component.CENTER_ALIGNMENT);
 
     JLabel tagline = new JLabel("Secure ordering for registered businesses and individuals.");
-    tagline.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    tagline.setFont(new Font("Segoe UI", Font.PLAIN, 22));
     tagline.setForeground(new Color(255, 255, 255, 90));
     tagline.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -132,17 +132,17 @@ private void styleComponents() {
 
     contentPanel.add(Box.createVerticalGlue());
     contentPanel.add(accent);
-    contentPanel.add(Box.createVerticalStrut(16));
+    contentPanel.add(Box.createVerticalStrut(26));
     contentPanel.add(eyebrow);
-    contentPanel.add(Box.createVerticalStrut(14));
+    contentPanel.add(Box.createVerticalStrut(22));
     contentPanel.add(titleLabel);
-    contentPanel.add(Box.createVerticalStrut(2));
+    contentPanel.add(Box.createVerticalStrut(4));
     contentPanel.add(titleLine2);
-    contentPanel.add(Box.createVerticalStrut(18));
+    contentPanel.add(Box.createVerticalStrut(28));
     contentPanel.add(tagline);
-    contentPanel.add(Box.createVerticalStrut(52));
+    contentPanel.add(Box.createVerticalStrut(80));
     contentPanel.add(loginButton);
-    contentPanel.add(Box.createVerticalStrut(14));
+    contentPanel.add(Box.createVerticalStrut(22));
     contentPanel.add(registerButton);
     contentPanel.add(Box.createVerticalGlue());
 
@@ -151,9 +151,9 @@ private void styleComponents() {
 }
 
     private void styleButton(JButton btn, boolean primary) {
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setPreferredSize(new Dimension(300, 50));
-        btn.setMaximumSize(new Dimension(300, 50));
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        btn.setPreferredSize(new Dimension(520, 66));
+        btn.setMaximumSize(new Dimension(520, 66));
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
