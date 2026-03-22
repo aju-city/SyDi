@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="2b4b768a-b527-4e55-80d5-4eaa53ea7442" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/SyDi.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/libraries/mysql_connector_j_9_6_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/TestCommercialApplicantInsert.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/service/IPUService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/service/PUServiceFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/service/PUServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/TestCommercialApplicantInsert.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/TestConnection.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/TestInsert.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/config.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/dao/CommercialApplicantDAO.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/dao/CompanyDirectorDAO.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/dao/NonCommercialMemberDAO.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/db/DatabaseConnection.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/model/CommercialApplicant.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/model/CompanyDirector.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/model/NonCommercialMember.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/service/IPUService.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/service/PUServiceFactory.class" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/service/PUServiceImpl.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/TestInsert.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/TestInsert.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CommercialApplicantDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CommercialApplicantDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CompanyDirectorDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CompanyDirectorDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/NonCommercialMemberDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/NonCommercialMemberDAO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/resources/config.example.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/resources/config.properties" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 4
+}]]></component>
+  <component name="ProjectId" id="3BJqvpSbo9JteRBAltMFnSnvfw5" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/becto/gitRepos/SyDi/2nd Deliverable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.30387.90" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2b4b768a-b527-4e55-80d5-4eaa53ea7442" name="Changes" comment="" />
+      <created>1774217753354</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1774217753354</updated>
+      <workItem from="1774217754533" duration="8000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
