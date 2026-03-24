@@ -284,6 +284,7 @@ public class LoginDialog extends javax.swing.JDialog {
         // Temporary success flow until database is connected
         errorLabel.setVisible(false);
         this.dispose();
+        new HomePage(username).setVisible(true);
     }//GEN-LAST:event_signInButtonActionPerformed
 
     private void passwordFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordFieldActionPerformed
