@@ -24,6 +24,9 @@ public class HomePage extends javax.swing.JFrame {
     private String activeFilterCategory = "All";
     private DefaultTableModel productModel;
     private Object[][] allProductData;
+    private String activePromo = null;  
+    private JTable productTable;
+    private JLabel promoBannerLbl;
 
     /**
      * Creates new form HomePage with a known username.
@@ -149,7 +152,6 @@ public class HomePage extends javax.swing.JFrame {
         navPanel.remove(mainScroll);
         getContentPane().add(mainScroll, BorderLayout.CENTER);
         
-        // nav
         navPanel.setBackground(PANEL);
         navPanel.setPreferredSize(new Dimension(0, 58));
         navPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -165,14 +167,12 @@ public class HomePage extends javax.swing.JFrame {
         navPanel.add(brandLabel);
         navPanel.add(filler1);
 
-        // Welcome label
         JLabel welcomeLabel = new JLabel("Hi, " + (username != null && !username.isEmpty() ? username : "Guest"));
         welcomeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         welcomeLabel.setForeground(new Color(255, 255, 255, 110));
         navPanel.add(welcomeLabel);
         navPanel.add(Box.createHorizontalStrut(16));
 
-        // left glue to push search towards centre
         Box.Filler leftGlue = new Box.Filler(
             new Dimension(0, 0), new Dimension(0, 0), new Dimension(Short.MAX_VALUE, 0));
         navPanel.add(leftGlue);
@@ -216,13 +216,11 @@ public class HomePage extends javax.swing.JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int w = c.getWidth(), h = c.getHeight();
-                // button background
                 g2.setColor(new Color(0x0b1220));
                 g2.fillRect(0, 0, w, h);
                 g2.setColor(new Color(37, 99, 168, 80));
                 g2.setStroke(new BasicStroke(1f));
                 g2.drawRect(0, 0, w - 1, h - 1);
-                // label
                 g2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
                 g2.setColor(new Color(255, 255, 255, 160));
                 String text = "Cart";
@@ -245,6 +243,10 @@ public class HomePage extends javax.swing.JFrame {
                 g2.dispose();
             }
         });
+        cartButton.addActionListener(e -> {
+            dispose();
+            new CartPage(username).setVisible(true);
+        });
         navPanel.add(cartButton);
 
         signOutButton.setBackground(NEON);
@@ -255,6 +257,8 @@ public class HomePage extends javax.swing.JFrame {
         signOutButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         signOutButton.setOpaque(true);
         signOutButton.addActionListener(e -> {
+            CartManager.clear();
+            OrderManager.clear();
             dispose();
             new LandingPage().setVisible(true);
         });
@@ -271,19 +275,16 @@ public class HomePage extends javax.swing.JFrame {
         contentPanel.setBorder(BorderFactory.createEmptyBorder(22, 28, 28, 28));
 
 
-        // Promo section header
         sectionPromoLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
         sectionPromoLabel.setForeground(NEON);
         sectionPromoLabel.setAlignmentX(LEFT_ALIGNMENT);
         sectionPromoLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-        // Promo cards
         promoPanel.setOpaque(false);
         promoPanel.setAlignmentX(LEFT_ALIGNMENT);
         promoPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 190));
         buildPromoCards();
 
-        // Catalogue section
         JLabel sectionCatLabel = new JLabel("PRODUCT CATALOGUE");
         sectionCatLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
         sectionCatLabel.setForeground(NEON);
@@ -301,7 +302,6 @@ public class HomePage extends javax.swing.JFrame {
 
         buildProductTable();
 
-        // Customer Services section
         contentPanel.add(Box.createVerticalStrut(24));
         contentPanel.add(buildCustomerServices());
 
@@ -345,18 +345,26 @@ public class HomePage extends javax.swing.JFrame {
     }
 
     private void buildPromoCards() {
-        String[][] promos = {
-            {"LIMITED OFFER", "Winter Wellness Pack",   "Vitamins C, D & Zinc \u2014 save 20%"},
-            {"NEW IN",        "Hayfever Relief Range",  "Antihistamines & nasal sprays restocked"},
-            {"BULK BUY",      "Paracetamol 500mg",      "Order 10+ boxes \u2014 15% off"},
-        };
-        promoPanel.setLayout(new GridLayout(1, promos.length, 14, 0));
-        for (String[] p : promos) {
-            promoPanel.add(makePromoCard(p[0], p[1], p[2]));
-        }
+        promoPanel.setLayout(new GridLayout(1, 3, 14, 0));
+
+        promoPanel.add(makePromoCard(
+            "20% OFF", "Supplements Sale",
+            "All supplements discounted \u2014 click to browse & buy at reduced prices",
+            () -> activatePromo("SUPPLEMENTS_20")
+        ));
+        promoPanel.add(makePromoCard(
+            "NEW IN", "Hayfever Relief Range",
+            "Antihistamines & nasal sprays \u2014 click to filter hayfever products",
+            () -> activatePromo("HAYFEVER")
+        ));
+        promoPanel.add(makePromoCard(
+            "BULK BUY", "Paracetamol 500mg",
+            "Buy 10 boxes get 1 FREE \u2014 click to auto-add deal to your cart",
+            () -> activatePromo("PARA_BULK")
+        ));
     }
 
-    private JPanel makePromoCard(String tag, String name, String desc) {
+    private JPanel makePromoCard(String tag, String name, String desc, Runnable onClick) {
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -394,7 +402,7 @@ public class HomePage extends javax.swing.JFrame {
         descLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         descLbl.setForeground(new Color(255, 255, 255, 115));
 
-        JLabel ctaLbl = new JLabel("ADD TO CART \u2192");
+        JLabel ctaLbl = new JLabel("APPLY PROMO \u2192");
         ctaLbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
         ctaLbl.setForeground(NEON);
         ctaLbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -406,6 +414,21 @@ public class HomePage extends javax.swing.JFrame {
         card.add(descLbl);
         card.add(Box.createVerticalGlue());
         card.add(ctaLbl);
+
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        java.awt.event.MouseAdapter promoClick = new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (onClick != null) onClick.run();
+            }
+            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
+                ctaLbl.setForeground(NEON_LT);
+            }
+            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+                ctaLbl.setForeground(NEON);
+            }
+        };
+        card.addMouseListener(promoClick);
+        ctaLbl.addMouseListener(promoClick);
         return card;
     }
 
@@ -429,6 +452,9 @@ public class HomePage extends javax.swing.JFrame {
                 activeFilterBtn = pill;
                 setFilterActive(pill);
                 activeFilterCategory = pill.getText();
+                activePromo = null;
+                searchField.setText("");
+                updatePromoBanner();
                 filterTable();
             });
             filterRow.add(pill);
@@ -436,32 +462,54 @@ public class HomePage extends javax.swing.JFrame {
     }
 
     private void setFilterActive(JButton btn) {
-        btn.setBackground(new Color(37, 99, 168, 55));
-        btn.setForeground(NEON_LT);
-        btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(NEON, 1),
-            BorderFactory.createEmptyBorder(4, 14, 4, 14)
-        ));
+        btn.setBackground(NEON);
+        btn.setForeground(Color.WHITE);
+        btn.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
     }
 
     private void setFilterInactive(JButton btn) {
         btn.setBackground(new Color(0x0b1220));
-        btn.setForeground(new Color(255, 255, 255, 130));
-        btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 70), 1),
-            BorderFactory.createEmptyBorder(4, 14, 4, 14)
-        ));
+        btn.setForeground(new Color(200, 200, 200));
+        btn.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
     }
     // temporary placeholder info
     private void buildProductTable() {
         String[] cols = {"PRODUCT", "CATEGORY", "UNIT PRICE", "STOCK", "QTY", ""};
         allProductData = new Object[][] {
-            {"Paracetamol 500mg \u00d7 16", "OTC",         "\u00a30.89", "IN STOCK",  1, "ADD"},
-            {"Vitamin C 1000mg \u00d7 30",  "Supplements", "\u00a34.49", "IN STOCK",  1, "ADD"},
-            {"Ibuprofen 200mg \u00d7 24",   "OTC",         "\u00a31.29", "LOW STOCK", 1, "ADD"},
-            {"Cetirizine 10mg \u00d7 30",   "OTC",         "\u00a33.19", "IN STOCK",  1, "ADD"},
-            {"Omega-3 Fish Oil \u00d7 90",  "Supplements", "\u00a38.99", "IN STOCK",  1, "ADD"},
-            {"Zinc 25mg \u00d7 60",         "Supplements", "\u00a36.49", "NO STOCK",  0, "ADD"},
+            {"Paracetamol 500mg \u00d7 16",         "OTC",         "\u00a30.89",  "IN STOCK",  1, "ADD"},
+            {"Paracetamol 500mg \u00d7 32",         "OTC",         "\u00a31.49",  "IN STOCK",  1, "ADD"},
+            {"Ibuprofen 200mg \u00d7 24",           "OTC",         "\u00a31.29",  "LOW STOCK", 1, "ADD"},
+            {"Ibuprofen 400mg \u00d7 24",           "OTC",         "\u00a32.19",  "IN STOCK",  1, "ADD"},
+            {"Aspirin 75mg \u00d7 28",              "OTC",         "\u00a31.49",  "IN STOCK",  1, "ADD"},
+            {"Codeine 8mg \u00d7 24",               "OTC",         "\u00a33.99",  "IN STOCK",  1, "ADD"},
+            {"Cetirizine 10mg \u00d7 30 (Hayfever)","OTC",         "\u00a33.19",  "IN STOCK",  1, "ADD"},
+            {"Loratadine 10mg \u00d7 30 (Hayfever)","OTC",         "\u00a32.49",  "IN STOCK",  1, "ADD"},
+            {"Chlorphenamine 4mg \u00d7 28 (Hayfever)","OTC",      "\u00a31.89",  "IN STOCK",  1, "ADD"},
+            {"Piriton Allergy \u00d7 30 (Hayfever)","OTC",         "\u00a34.29",  "IN STOCK",  1, "ADD"},
+            {"Beconase Nasal Spray (Hayfever)",     "OTC",         "\u00a36.99",  "LOW STOCK", 1, "ADD"},
+            {"Benadryl Allergy \u00d7 12 (Hayfever)","OTC",        "\u00a35.99",  "IN STOCK",  1, "ADD"},
+            {"Gaviscon Liquid 300ml",               "OTC",         "\u00a35.49",  "IN STOCK",  1, "ADD"},
+            {"Rennies Antacid \u00d7 48",           "OTC",         "\u00a33.29",  "IN STOCK",  1, "ADD"},
+            {"Loperamide 2mg \u00d7 12",            "OTC",         "\u00a32.99",  "IN STOCK",  1, "ADD"},
+            {"Buscopan IBS Relief \u00d7 20",       "OTC",         "\u00a34.99",  "IN STOCK",  1, "ADD"},
+            {"Vitamin C 1000mg \u00d7 30",          "Supplements", "\u00a34.49",  "IN STOCK",  1, "ADD"},
+            {"Vitamin D3 1000IU \u00d7 90",         "Supplements", "\u00a35.99",  "IN STOCK",  1, "ADD"},
+            {"Vitamin B12 1000mcg \u00d7 60",       "Supplements", "\u00a37.49",  "IN STOCK",  1, "ADD"},
+            {"Omega-3 Fish Oil \u00d7 90",          "Supplements", "\u00a38.99",  "IN STOCK",  1, "ADD"},
+            {"Zinc 25mg \u00d7 60",                 "Supplements", "\u00a36.49",  "NO STOCK",  0, "ADD"},
+            {"Magnesium 375mg \u00d7 60",           "Supplements", "\u00a36.99",  "IN STOCK",  1, "ADD"},
+            {"Evening Primrose 1000mg \u00d7 60",   "Supplements", "\u00a38.49",  "IN STOCK",  1, "ADD"},
+            {"Iron 14mg \u00d7 90",                 "Supplements", "\u00a35.49",  "IN STOCK",  1, "ADD"},
+            {"Multivitamin A-Z \u00d7 90",          "Supplements", "\u00a39.99",  "IN STOCK",  1, "ADD"},
+            {"Biotin 10000mcg \u00d7 60",           "Supplements", "\u00a311.99", "LOW STOCK", 1, "ADD"},
+            {"Collagen Peptides \u00d7 60",         "Supplements", "\u00a314.99", "IN STOCK",  1, "ADD"},
+            {"E45 Moisturising Cream 500g",         "Skincare",    "\u00a36.99",  "IN STOCK",  1, "ADD"},
+            {"Sudocrem Antiseptic Cream 250g",      "Skincare",    "\u00a34.49",  "IN STOCK",  1, "ADD"},
+            {"CeraVe Moisturiser 236ml",            "Skincare",    "\u00a39.99",  "IN STOCK",  1, "ADD"},
+            {"Hydrocortisone 0.5% Cream 15g",       "Skincare",    "\u00a32.99",  "IN STOCK",  1, "ADD"},
+            {"Germolene Antiseptic Cream 30g",      "Skincare",    "\u00a33.49",  "IN STOCK",  1, "ADD"},
+            {"Savlon Antiseptic Cream 30g",         "Skincare",    "\u00a32.99",  "LOW STOCK", 1, "ADD"},
+            {"Diprobase Emollient Cream 500g",      "Skincare",    "\u00a37.99",  "IN STOCK",  1, "ADD"},
         };
         productModel = new DefaultTableModel(allProductData, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -514,6 +562,48 @@ public class HomePage extends javax.swing.JFrame {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
+        table.getColumnModel().getColumn(2).setCellRenderer((t, v, sel, foc, r, c) -> {
+            String stock = t.getModel().getValueAt(r, 3) != null
+                ? t.getModel().getValueAt(r, 3).toString() : "";
+            boolean noStock = "NO STOCK".equals(stock);
+            String category = t.getModel().getValueAt(r, 1) != null
+                ? t.getModel().getValueAt(r, 1).toString() : "";
+            Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
+            if (sel) bg = new Color(37, 99, 168, 50);
+
+            boolean applyDiscount = "SUPPLEMENTS_20".equals(activePromo)
+                && "Supplements".equals(category) && !noStock;
+            JPanel cell = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 16, 0));
+            cell.setOpaque(true);
+            cell.setBackground(bg);
+            cell.setPreferredSize(new java.awt.Dimension(0, 40));
+            if (applyDiscount) {
+                String orig = v != null ? v.toString() : "";
+                try {
+                    double price = Double.parseDouble(orig.replace("\u00a3", ""));
+                    double disc  = Math.round(price * 0.80 * 100.0) / 100.0;
+                    JLabel discLbl = new JLabel(String.format("\u00a3%.2f", disc));
+                    discLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                    discLbl.setForeground(new Color(0x4ade80));
+                    JLabel origLbl = new JLabel(orig);
+                    origLbl.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                    origLbl.setForeground(new Color(255, 255, 255, 70));
+                    cell.add(discLbl);
+                    cell.add(origLbl);
+                } catch (NumberFormatException ignored) {
+                    JLabel lbl = new JLabel(v != null ? v.toString() : "");
+                    lbl.setForeground(new Color(255, 255, 255, 200));
+                    cell.add(lbl);
+                }
+            } else {
+                JLabel lbl = new JLabel(v != null ? v.toString() : "");
+                lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                lbl.setForeground(noStock ? new Color(255, 255, 255, 80) : new Color(255, 255, 255, 200));
+                cell.add(lbl);
+            }
+            return cell;
+        });
+
 
         table.getColumnModel().getColumn(4).setCellRenderer((t, v, sel, foc, r, c) -> {
             String stock = t.getModel().getValueAt(r, 3) != null
@@ -558,7 +648,18 @@ public class HomePage extends javax.swing.JFrame {
                 if (col == 5 && row >= 0) {
                     Object stockVal = productModel.getValueAt(row, 3);
                     if (stockVal != null && !"NO STOCK".equals(stockVal.toString())) {
-                        cartCount++;
+                        String prodName  = productModel.getValueAt(row, 0).toString();
+                        String category  = productModel.getValueAt(row, 1).toString();
+                        String priceStr  = productModel.getValueAt(row, 2).toString()
+                                               .replace("\u00a3", "").trim();
+                        try {
+                            double unitPrice = Double.parseDouble(priceStr);
+                            if ("SUPPLEMENTS_20".equals(activePromo) && "Supplements".equals(category)) {
+                                unitPrice = Math.round(unitPrice * 0.80 * 100.0) / 100.0;
+                            }
+                            CartManager.addItem(prodName, category, unitPrice, 1);
+                        } catch (NumberFormatException ignored) {}
+                        cartCount = CartManager.getTotalCount();
                         cartButton.repaint();
                     }
                 }
@@ -571,6 +672,21 @@ public class HomePage extends javax.swing.JFrame {
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e)  { filterTable(); }
             @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { filterTable(); }
         });
+
+        productTable = table;
+
+        promoBannerLbl = new JLabel();
+        promoBannerLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        promoBannerLbl.setForeground(new Color(0x4ade80));
+        promoBannerLbl.setOpaque(true);
+        promoBannerLbl.setBackground(new Color(0x0a1f0a));
+        promoBannerLbl.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(74, 222, 128, 60)),
+            BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+        promoBannerLbl.setAlignmentX(LEFT_ALIGNMENT);
+        promoBannerLbl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        promoBannerLbl.setVisible(false);
+        cataloguePanel.add(promoBannerLbl);
 
         JScrollPane sp = new JScrollPane(table);
         sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 60), 1));
@@ -600,21 +716,16 @@ public class HomePage extends javax.swing.JFrame {
         btnRow.setAlignmentX(LEFT_ALIGNMENT);
         btnRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        String[][] services = {
-            {"\u25B6", "Track Order"},
-            {"\u2261", "My Orders"},
-            {"\u25A1", "View Invoices"},
-            {"\u25CB", "Manage Account"},
-        };
-        for (String[] s : services) {
-            btnRow.add(makeServiceCard(s[0], s[1]));
-        }
+        btnRow.add(makeServiceCard("Track Order",     () -> { dispose(); new TrackOrderPage(username).setVisible(true); }));
+        btnRow.add(makeServiceCard("My Orders",       () -> { dispose(); new MyOrdersPage(username).setVisible(true); }));
+        btnRow.add(makeServiceCard("View Invoices",   () -> { dispose(); new ViewInvoicesPage(username).setVisible(true); }));
+        btnRow.add(makeServiceCard("Manage Account",  null));
 
         section.add(btnRow);
         return section;
     }
 
-    private JPanel makeServiceCard(String icon, String label) {
+    private JPanel makeServiceCard(String label, Runnable onClick) {
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -628,26 +739,25 @@ public class HomePage extends javax.swing.JFrame {
             }
         };
         card.setOpaque(false);
-        card.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 18));
+        card.setLayout(new GridBagLayout());
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JLabel iconLbl = new JLabel(icon);
-        iconLbl.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        JLabel textLbl = new JLabel(label, SwingConstants.CENTER);
+        textLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        textLbl.setForeground(Color.WHITE);
 
-        JLabel textLbl = new JLabel(label);
-        textLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        textLbl.setForeground(new Color(255, 255, 255, 160));
-
-        card.add(iconLbl);
-        card.add(textLbl);
+        card.add(textLbl, new GridBagConstraints());
 
         card.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (onClick != null) onClick.run();
+            }
             @Override public void mouseEntered(java.awt.event.MouseEvent e) {
                 textLbl.setForeground(NEON_LT);
                 card.repaint();
             }
             @Override public void mouseExited(java.awt.event.MouseEvent e) {
-                textLbl.setForeground(new Color(255, 255, 255, 160));
+                textLbl.setForeground(Color.WHITE);
                 card.repaint();
             }
         });
@@ -671,6 +781,82 @@ public class HomePage extends javax.swing.JFrame {
                 productModel.addRow(row);
             }
         }
+        if (productTable != null) productTable.repaint();
+    }
+
+    private void activatePromo(String promoCode) {
+        activePromo = promoCode;
+
+        switch (promoCode) {
+            case "SUPPLEMENTS_20":
+                activeFilterCategory = "Supplements";
+                if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
+                for (java.awt.Component c : filterRow.getComponents()) {
+                    if (c instanceof JButton && "Supplements".equals(((JButton) c).getText())) {
+                        activeFilterBtn = (JButton) c;
+                        setFilterActive(activeFilterBtn);
+                    }
+                }
+                searchField.setText("");
+                filterTable();
+                break;
+
+            case "HAYFEVER":
+                activeFilterCategory = "All";
+                if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
+                for (java.awt.Component c : filterRow.getComponents()) {
+                    if (c instanceof JButton && "All".equals(((JButton) c).getText())) {
+                        activeFilterBtn = (JButton) c;
+                        setFilterActive(activeFilterBtn);
+                    }
+                }
+                searchField.setText("hayfever");
+                break;
+
+            case "PARA_BULK":
+                for (Object[] row : allProductData) {
+                    if (row[0].toString().startsWith("Paracetamol 500mg \u00d7 16")) {
+                        String pName = row[0].toString();
+                        String pCat  = row[1].toString();
+                        double price = 0;
+                        try { price = Double.parseDouble(row[2].toString().replace("\u00a3", "")); }
+                        catch (NumberFormatException ignored) {}
+                        CartManager.addItem(pName, pCat, price, 10);
+                        CartManager.addItem(pName + " (FREE)", pCat, 0.0, 1);
+                        cartCount = CartManager.getTotalCount();
+                        cartButton.repaint();
+                        break;
+                    }
+                }
+                searchField.setText("paracetamol");
+                break;
+        }
+
+        updatePromoBanner();
+    }
+
+    private void updatePromoBanner() {
+        if (promoBannerLbl == null) return;
+        if (activePromo == null) {
+            promoBannerLbl.setVisible(false);
+            return;
+        }
+        switch (activePromo) {
+            case "SUPPLEMENTS_20":
+                promoBannerLbl.setText(
+                    "  PROMO ACTIVE \u2014 All Supplements 20% Off. Prices below are discounted. Click + ADD to buy at sale price.");
+                break;
+            case "HAYFEVER":
+                promoBannerLbl.setText(
+                    "  PROMO ACTIVE \u2014 Hayfever Relief Range. Showing all hayfever products.");
+                break;
+            case "PARA_BULK":
+                promoBannerLbl.setText(
+                    "  PROMO APPLIED \u2014 10 x Paracetamol 500mg added to your cart + 1 FREE. Check your cart to checkout.");
+                break;
+        }
+        promoBannerLbl.setVisible(true);
+        cataloguePanel.revalidate();
     }
 
     // two character from username as the logo

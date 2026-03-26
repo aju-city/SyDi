@@ -281,10 +281,18 @@ public class LoginDialog extends javax.swing.JDialog {
             return;
         }
 
-        // Temporary success flow until database is connected
         errorLabel.setVisible(false);
-        this.dispose();
-        new HomePage(username).setVisible(true);
+        if (password.equals("test")) {
+            ChangePasswordDialog cpd = new ChangePasswordDialog(
+                (java.awt.Frame) getOwner(), true, username);
+            this.dispose();
+            cpd.setVisible(true);
+        } else {
+            java.awt.Window owner = getOwner();
+            this.dispose();
+            if (owner != null) owner.dispose();
+            new HomePage(username).setVisible(true);
+        }
     }//GEN-LAST:event_signInButtonActionPerformed
 
     private void passwordFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordFieldActionPerformed
