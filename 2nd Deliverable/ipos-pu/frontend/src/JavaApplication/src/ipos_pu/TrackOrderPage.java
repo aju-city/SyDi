@@ -16,6 +16,7 @@ import java.util.List;
  */
 public class TrackOrderPage extends javax.swing.JFrame {
 
+    // colour palette
     private static final Color BG      = new Color(0x05080f);
     private static final Color PANEL   = new Color(0x080e1a);
     private static final Color NEON    = new Color(0x2563A8);
@@ -42,6 +43,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         getContentPane().add(buildContent(), BorderLayout.CENTER);
     }
 
+    // nav bar
     private JPanel buildNav() {
         JPanel nav = new JPanel();
         nav.setBackground(PANEL);
@@ -90,8 +92,8 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return nav;
     }
 
+    // small avatar circle drawn in the nav
     private JPanel makeAvatarPanel() {
-        // avatar with user initials
         String initials = getInitials(username);
         JPanel avatar = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -114,6 +116,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return avatar;
     }
 
+    // loads all orders and shows a tracking card for each one
     private JScrollPane buildContent() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -144,6 +147,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
 
         List<OrderManager.Order> orders = OrderManager.getOrders();
 
+        // empty state if no orders have been placed yet
         if (orders.isEmpty()) {
             JPanel emptyPanel = new JPanel(new GridBagLayout());
             emptyPanel.setBackground(PANEL);
@@ -193,6 +197,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return scroll;
     }
 
+    // one card per order with order details on the left and the step tracker on the right
     private JPanel buildOrderCard(OrderManager.Order order) {
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -212,6 +217,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
+        // order info stacked on the left side of the card
         JPanel info = new JPanel();
         info.setOpaque(false);
         info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
@@ -245,6 +251,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return card;
     }
 
+    // draws the three step tracker showing which stage the order is at
     private JPanel buildStepTracker(int activeStage) {
         String[] labels = { "Received", "Dispatched", "Delivered" };
 
@@ -261,6 +268,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
                 int margin = 30;
                 int step   = (w - margin * 2) / (labels.length - 1);
 
+                // connecting lines between the dots green if that stage is done
                 for (int i = 0; i < labels.length - 1; i++) {
                     int x1   = margin + i * step + dotR;
                     int x2   = margin + (i + 1) * step - dotR;
@@ -270,6 +278,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
                     g2.drawLine(x1, dotY, x2, dotY);
                 }
 
+                // each dot is either done active or upcoming with different styles
                 for (int i = 0; i < labels.length; i++) {
                     int cx     = margin + i * step;
                     boolean done   = activeStage > i;
@@ -308,7 +317,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return panel;
     }
 
-    // two character from username as the logo
+    // grabs initials from the username for the avatar
     private String getInitials(String name) {
         if (name == null || name.trim().isEmpty()) return "G";
         String[] parts = name.trim().split("\\s+");

@@ -13,6 +13,7 @@ import javax.swing.*;
  */
 public class ChangePasswordDialog extends javax.swing.JDialog {
 
+    // colour palette
     private static final Color BG      = new Color(0x05080f);
     private static final Color NEON    = new Color(0x2563A8);
     private static final Color NEON_LT = new Color(0x7eb8f7);
@@ -29,12 +30,14 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         setLocationRelativeTo(parent);
     }
 
+    // sets up the dialog layout and form fields
     private void buildUI() {
         setTitle("Set New Password");
         setSize(460, 480);
         setResizable(false);
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
+        // background with a subtle scanline effect and radial glow in the centre
         JPanel bg = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -55,6 +58,7 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(bg, BorderLayout.CENTER);
 
+        // form content centred in the dialog
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -115,6 +119,7 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         content.add(Box.createVerticalGlue());
     }
 
+    // validates the two fields and opens the home page if everything checks out
     private void handleConfirm() {
         String newPass     = new String(newPassField.getPassword()).trim();
         String confirmPass = new String(confirmPassField.getPassword()).trim();
@@ -123,6 +128,7 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
             showError("Please enter a new password.");
             return;
         }
+        // cant keep the temp password that was used to first log in
         if (newPass.equals("test")) {
             showError("You cannot keep the temporary password.");
             return;
@@ -136,18 +142,19 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
             return;
         }
 
-        // Password accepted — close dialog and open HomePage
         java.awt.Window owner = getOwner();
         dispose();
         if (owner != null) owner.dispose();
         new HomePage(username).setVisible(true);
     }
 
+    // shows the red error label with the given message
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
     }
 
+    // styles a password field with a focus highlight on the bottom border
     private void styleField(JPasswordField field) {
         field.setBackground(new Color(8, 16, 30));
         field.setForeground(Color.WHITE);
@@ -172,6 +179,7 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         });
     }
 
+    // custom painted button with a glow effect on hover
     private void styleButton(JButton btn) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setPreferredSize(new Dimension(320, 50));

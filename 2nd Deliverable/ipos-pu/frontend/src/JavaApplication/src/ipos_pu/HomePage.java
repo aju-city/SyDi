@@ -345,23 +345,24 @@ public class HomePage extends javax.swing.JFrame {
     }
 
     private void buildPromoCards() {
-        promoPanel.setLayout(new GridLayout(1, 3, 14, 0));
-
-        promoPanel.add(makePromoCard(
-            "20% OFF", "Supplements Sale",
-            "All supplements discounted \u2014 click to browse & buy at reduced prices",
-            () -> activatePromo("SUPPLEMENTS_20")
-        ));
-        promoPanel.add(makePromoCard(
-            "NEW IN", "Hayfever Relief Range",
-            "Antihistamines & nasal sprays \u2014 click to filter hayfever products",
-            () -> activatePromo("HAYFEVER")
-        ));
-        promoPanel.add(makePromoCard(
-            "BULK BUY", "Paracetamol 500mg",
-            "Buy 10 boxes get 1 FREE \u2014 click to auto-add deal to your cart",
-            () -> activatePromo("PARA_BULK")
-        ));
+        java.util.List<JPanel> cards = new java.util.ArrayList<>();
+        for (PromoManager.PromoConfig cfg : PromoManager.ALL_PROMOS) {
+            if (PromoManager.isEnabled(cfg.code)) {
+                final String code = cfg.code;
+                cards.add(makePromoCard(cfg.tag, cfg.name, cfg.desc,
+                    () -> activatePromo(code)));
+            }
+        }
+        if (cards.isEmpty()) {
+            promoPanel.setLayout(new BorderLayout());
+            JLabel none = new JLabel("No promotions are currently active.");
+            none.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            none.setForeground(new Color(255, 255, 255, 60));
+            promoPanel.add(none, BorderLayout.WEST);
+        } else {
+            promoPanel.setLayout(new GridLayout(1, cards.size(), 14, 0));
+            for (JPanel c : cards) promoPanel.add(c);
+        }
     }
 
     private JPanel makePromoCard(String tag, String name, String desc, Runnable onClick) {
@@ -571,8 +572,12 @@ public class HomePage extends javax.swing.JFrame {
             Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
             if (sel) bg = new Color(37, 99, 168, 50);
 
-            boolean applyDiscount = "SUPPLEMENTS_20".equals(activePromo)
-                && "Supplements".equals(category) && !noStock;
+            PromoManager.PromoConfig activeCfg = activePromo != null
+                ? PromoManager.getConfig(activePromo) : null;
+            boolean applyDiscount = activeCfg != null && activeCfg.discountRate < 1.0
+                && ("All".equals(activeCfg.discountCategory)
+                    || activeCfg.discountCategory.equals(category))
+                && !noStock;
             JPanel cell = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 16, 0));
             cell.setOpaque(true);
             cell.setBackground(bg);
@@ -581,7 +586,7 @@ public class HomePage extends javax.swing.JFrame {
                 String orig = v != null ? v.toString() : "";
                 try {
                     double price = Double.parseDouble(orig.replace("\u00a3", ""));
-                    double disc  = Math.round(price * 0.80 * 100.0) / 100.0;
+                    double disc  = Math.round(price * activeCfg.discountRate * 100.0) / 100.0;
                     JLabel discLbl = new JLabel(String.format("\u00a3%.2f", disc));
                     discLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
                     discLbl.setForeground(new Color(0x4ade80));
@@ -654,8 +659,12 @@ public class HomePage extends javax.swing.JFrame {
                                                .replace("\u00a3", "").trim();
                         try {
                             double unitPrice = Double.parseDouble(priceStr);
-                            if ("SUPPLEMENTS_20".equals(activePromo) && "Supplements".equals(category)) {
-                                unitPrice = Math.round(unitPrice * 0.80 * 100.0) / 100.0;
+                            PromoManager.PromoConfig clickCfg = activePromo != null
+                                ? PromoManager.getConfig(activePromo) : null;
+                            if (clickCfg != null && clickCfg.discountRate < 1.0
+                                    && ("All".equals(clickCfg.discountCategory)
+                                        || clickCfg.discountCategory.equals(category))) {
+                                unitPrice = Math.round(unitPrice * clickCfg.discountRate * 100.0) / 100.0;
                             }
                             CartManager.addItem(prodName, category, unitPrice, 1);
                         } catch (NumberFormatException ignored) {}
@@ -719,7 +728,7 @@ public class HomePage extends javax.swing.JFrame {
         btnRow.add(makeServiceCard("Track Order",     () -> { dispose(); new TrackOrderPage(username).setVisible(true); }));
         btnRow.add(makeServiceCard("My Orders",       () -> { dispose(); new MyOrdersPage(username).setVisible(true); }));
         btnRow.add(makeServiceCard("View Invoices",   () -> { dispose(); new ViewInvoicesPage(username).setVisible(true); }));
-        btnRow.add(makeServiceCard("Manage Account",  null));
+        btnRow.add(makeServiceCard("Manage Account",  () -> { dispose(); new ManageAccountPage(username).setVisible(true); }));
 
         section.add(btnRow);
         return section;
@@ -786,52 +795,20 @@ public class HomePage extends javax.swing.JFrame {
 
     private void activatePromo(String promoCode) {
         activePromo = promoCode;
-
-        switch (promoCode) {
-            case "SUPPLEMENTS_20":
-                activeFilterCategory = "Supplements";
-                if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
-                for (java.awt.Component c : filterRow.getComponents()) {
-                    if (c instanceof JButton && "Supplements".equals(((JButton) c).getText())) {
-                        activeFilterBtn = (JButton) c;
-                        setFilterActive(activeFilterBtn);
-                    }
+        PromoManager.PromoConfig cfg = PromoManager.getConfig(promoCode);
+        if (cfg != null) {
+            activeFilterCategory = cfg.discountCategory;
+            if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
+            for (java.awt.Component c : filterRow.getComponents()) {
+                if (c instanceof JButton && cfg.discountCategory.equals(((JButton) c).getText())) {
+                    activeFilterBtn = (JButton) c;
+                    setFilterActive(activeFilterBtn);
+                    break;
                 }
-                searchField.setText("");
-                filterTable();
-                break;
-
-            case "HAYFEVER":
-                activeFilterCategory = "All";
-                if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
-                for (java.awt.Component c : filterRow.getComponents()) {
-                    if (c instanceof JButton && "All".equals(((JButton) c).getText())) {
-                        activeFilterBtn = (JButton) c;
-                        setFilterActive(activeFilterBtn);
-                    }
-                }
-                searchField.setText("hayfever");
-                break;
-
-            case "PARA_BULK":
-                for (Object[] row : allProductData) {
-                    if (row[0].toString().startsWith("Paracetamol 500mg \u00d7 16")) {
-                        String pName = row[0].toString();
-                        String pCat  = row[1].toString();
-                        double price = 0;
-                        try { price = Double.parseDouble(row[2].toString().replace("\u00a3", "")); }
-                        catch (NumberFormatException ignored) {}
-                        CartManager.addItem(pName, pCat, price, 10);
-                        CartManager.addItem(pName + " (FREE)", pCat, 0.0, 1);
-                        cartCount = CartManager.getTotalCount();
-                        cartButton.repaint();
-                        break;
-                    }
-                }
-                searchField.setText("paracetamol");
-                break;
+            }
+            searchField.setText("");
+            filterTable();
         }
-
         updatePromoBanner();
     }
 
@@ -841,19 +818,14 @@ public class HomePage extends javax.swing.JFrame {
             promoBannerLbl.setVisible(false);
             return;
         }
-        switch (activePromo) {
-            case "SUPPLEMENTS_20":
-                promoBannerLbl.setText(
-                    "  PROMO ACTIVE \u2014 All Supplements 20% Off. Prices below are discounted. Click + ADD to buy at sale price.");
-                break;
-            case "HAYFEVER":
-                promoBannerLbl.setText(
-                    "  PROMO ACTIVE \u2014 Hayfever Relief Range. Showing all hayfever products.");
-                break;
-            case "PARA_BULK":
-                promoBannerLbl.setText(
-                    "  PROMO APPLIED \u2014 10 x Paracetamol 500mg added to your cart + 1 FREE. Check your cart to checkout.");
-                break;
+        PromoManager.PromoConfig cfg = PromoManager.getConfig(activePromo);
+        if (cfg != null) {
+            int pct = (int) Math.round((1.0 - cfg.discountRate) * 100);
+            String catText = "All".equals(cfg.discountCategory)
+                ? "all products" : cfg.discountCategory + " products";
+            promoBannerLbl.setText("  PROMO ACTIVE \u2014 " + cfg.name
+                + ". " + pct + "% off " + catText
+                + ". Prices below are discounted. Click + ADD to buy at sale price.");
         }
         promoBannerLbl.setVisible(true);
         cataloguePanel.revalidate();

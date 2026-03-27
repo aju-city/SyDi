@@ -15,6 +15,7 @@ import java.util.List;
  */
 public class MyOrdersPage extends javax.swing.JFrame {
 
+    // colour palette
     private static final Color BG      = new Color(0x05080f);
     private static final Color PANEL   = new Color(0x080e1a);
     private static final Color NEON    = new Color(0x2563A8);
@@ -40,6 +41,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         getContentPane().add(buildContent(), BorderLayout.CENTER);
     }
 
+    // nav bar
     private JPanel buildNav() {
         JPanel nav = new JPanel();
         nav.setBackground(PANEL);
@@ -87,6 +89,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return nav;
     }
 
+    // loads orders from the manager and shows them in a table or the empty state
     private JScrollPane buildContent() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -132,6 +135,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return scroll;
     }
 
+    // shown when theres no orders yet
     private JPanel buildEmptyState() {
         JPanel empty = new JPanel(new GridBagLayout());
         empty.setBackground(PANEL);
@@ -167,13 +171,13 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return empty;
     }
 
+    // builds the orders table with a header row and one row per order
     private JPanel buildOrderTable(List<OrderManager.Order> orders) {
         JPanel wrapper = new JPanel();
         wrapper.setOpaque(false);
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
         wrapper.setAlignmentX(LEFT_ALIGNMENT);
 
-        // Header row
         JPanel header = new JPanel(new GridLayout(1, 5, 0, 0));
         header.setBackground(new Color(0x0a1018));
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
@@ -204,6 +208,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
             row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
             row.setAlignmentX(LEFT_ALIGNMENT);
 
+            // status column colour changes based on how far along the order is
             String stageName  = stageNames[Math.min(o.stage, stageNames.length - 1)];
             Color  stageColor = o.stage == 2 ? GREEN : (o.stage == 1 ? NEON_LT : new Color(255, 255, 255, 160));
 
@@ -223,7 +228,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
             wrapper.add(row);
         }
 
-        // Bottom border
+        // thin line at the bottom of the table
         JPanel border = new JPanel();
         border.setBackground(new Color(37, 99, 168, 40));
         border.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
@@ -233,8 +238,8 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return wrapper;
     }
 
+    // small circle avatar for the nav
     private JPanel makeAvatarPanel() {
-        // avatar with user initials
         String initials = getInitials(username);
         JPanel avatar = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -257,7 +262,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return avatar;
     }
 
-    // two character from username as the logo
+    // grabs first letters from the name for the avatar initials
     private String getInitials(String name) {
         if (name == null || name.trim().isEmpty()) return "G";
         String[] parts = name.trim().split("\\s+");

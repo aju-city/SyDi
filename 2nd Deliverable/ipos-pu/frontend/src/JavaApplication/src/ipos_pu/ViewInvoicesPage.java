@@ -16,13 +16,14 @@ import java.util.List;
  */
 public class ViewInvoicesPage extends javax.swing.JFrame {
 
+    // colour palette
     private static final Color BG      = new Color(0x05080f);
     private static final Color PANEL   = new Color(0x080e1a);
     private static final Color NEON    = new Color(0x2563A8);
     private static final Color NEON_LT = new Color(0x7eb8f7);
     private static final Color GREEN   = new Color(0x4ade80);
 
-
+    // vat is always 20%
     private static final double VAT_RATE = 0.20;
 
     private final String username;
@@ -44,6 +45,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         getContentPane().add(buildContent(), BorderLayout.CENTER);
     }
 
+    // nav bar
     private JPanel buildNav() {
         JPanel nav = new JPanel();
         nav.setBackground(PANEL);
@@ -54,6 +56,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
             BorderFactory.createEmptyBorder(0, 20, 0, 20)
         ));
 
+        // clicking the logo goes back to home
         JLabel brand = new JLabel("<html><span style='font-family:Trebuchet MS;font-size:16px;"
             + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
             + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
@@ -91,6 +94,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return nav;
     }
 
+    // loads all saved orders and renders an invoice card for each one
     private JScrollPane buildContent() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -139,6 +143,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return scroll;
     }
 
+    // shown when there are no orders yet
     private JPanel buildEmptyState() {
         JPanel empty = new JPanel(new GridBagLayout());
         empty.setBackground(PANEL);
@@ -174,6 +179,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return empty;
     }
 
+    // builds one full invoice card for a given order
     private JPanel buildInvoiceCard(OrderManager.Order order) {
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -192,6 +198,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         card.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
+        // customer address on the left merchant address on the right
         JPanel addrRow = new JPanel(new BorderLayout());
         addrRow.setOpaque(false);
         addrRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 90));
@@ -276,6 +283,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return card;
     }
 
+    // builds the line items table with subtotal vat and total at the bottom
     private JPanel buildItemsTable(OrderManager.Order order) {
         JPanel wrapper = new JPanel();
         wrapper.setOpaque(false);
@@ -288,11 +296,9 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         String[] colNames = { "Item", "Qty", "Unit Price", "Amount" };
         int[]    colW     = { 5, 1, 1, 1 }; // relative weights via GridBagLayout
 
-        // Header
         JPanel header = buildTableRow(colNames, null, headerBg, true, borderCol);
         wrapper.add(header);
 
-        // Item rows
         double subtotal = 0;
         List<CartManager.CartItem> items = order.items;
         for (int i = 0; i < items.size(); i++) {
@@ -305,6 +311,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
                 String.format("\u00a3%.2f", it.unitPrice),
                 String.format("\u00a3%.2f", lineTotal)
             };
+            // alternating row background for readabilty
             Color rowBg = i % 2 == 0 ? PANEL : new Color(0x0a1018);
             wrapper.add(buildTableRow(cells, null, rowBg, false, borderCol));
         }
@@ -357,12 +364,14 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return row;
     }
 
+    // summary row used for subtotal vat and total at the bottom of the table
     private JPanel buildSummaryRow(String label, String value, Color borderCol) {
         JPanel row = new JPanel(new GridLayout(1, 4, 0, 0));
         row.setBackground(PANEL);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         row.setAlignmentX(LEFT_ALIGNMENT);
 
+        // two blank cells take up the first columns to push the label and value to the right
         for (int i = 0; i < 2; i++) {
             JLabel blank = new JLabel();
             blank.setBackground(PANEL);
@@ -396,8 +405,8 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return row;
     }
 
+    // small circle avatar for the nav using the users initials
     private JPanel makeAvatarPanel() {
-        // avatar with user initials
         String initials = getInitials(username);
         JPanel avatar = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -420,7 +429,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         return avatar;
     }
 
-    // two character from username as the logo
+    // grabs first letters of the name for the avatar initials
     private String getInitials(String name) {
         if (name == null || name.trim().isEmpty()) return "G";
         String[] parts = name.trim().split("\\s+");
