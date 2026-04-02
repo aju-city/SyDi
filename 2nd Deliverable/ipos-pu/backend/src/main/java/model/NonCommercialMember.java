@@ -2,22 +2,30 @@ package model;
 
 import java.sql.Timestamp;
 
+/**
+ * Model class representing a non-commercial member.
+ */
 public class NonCommercialMember {
+
     private int memberID;
     private String email;
     private String password;
     private boolean mustChangePassword;
     private int totalOrders;
     private Timestamp createdAt;
+    private String memberAccountNo;
 
     public NonCommercialMember() {
     }
 
-    public NonCommercialMember(String email, String password, boolean mustChangePassword, int totalOrders) {
+    public NonCommercialMember(int memberID, String email, String password,
+                               boolean mustChangePassword, int totalOrders, Timestamp createdAt) {
+        this.memberID = memberID;
         this.email = email;
         this.password = password;
         this.mustChangePassword = mustChangePassword;
         this.totalOrders = totalOrders;
+        this.createdAt = createdAt;
     }
 
     public int getMemberID() {
@@ -67,4 +75,14 @@ public class NonCommercialMember {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
+
+    public String getMemberAccountNo() {
+        return memberAccountNo;
+    }
+
+    public void setMemberAccountNo(String memberAccountNo) {
+        this.memberAccountNo = memberAccountNo;
+    }
+
+
 }

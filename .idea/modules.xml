@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/SyDi.iml" filepath="$PROJECT_DIR$/SyDi.iml" />
-      <module fileurl="file://$PROJECT_DIR$/2nd Deliverable/ipos-pu/backend/ipos-pu-backend.iml" filepath="$PROJECT_DIR$/2nd Deliverable/ipos-pu/backend/ipos-pu-backend.iml" />
     </modules>
   </component>
 </project>
