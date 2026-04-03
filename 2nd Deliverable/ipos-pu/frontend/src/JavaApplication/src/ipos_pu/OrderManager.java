@@ -53,6 +53,16 @@ public class OrderManager {
         return new ArrayList<>(orders);
     }
 
+    // true if the next order placed will be a 10th milestone so the loyalty discount applies
+    public static boolean isLoyaltyOrder() {
+        return orders.size() % 10 == 9;
+    }
+
+    // total number of orders placed so far, useful for the reports
+    public static int getOrderCount() {
+        return orders.size();
+    }
+
     public static void clear() {
         orders.clear();
         counter = 1;

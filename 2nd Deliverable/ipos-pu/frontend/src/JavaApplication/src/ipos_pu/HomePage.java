@@ -20,13 +20,16 @@ public class HomePage extends javax.swing.JFrame {
 
     private String username;
     private int cartCount = 0;
-    private JButton activeFilterBtn = null;
-    private String activeFilterCategory = "All";
     private DefaultTableModel productModel;
     private Object[][] allProductData;
-    private String activePromo = null;  
+    private String activePromo = null;
     private JTable productTable;
     private JLabel promoBannerLbl;
+    private JLabel loyaltyBannerLbl;
+    // actual db stock qty per product name
+    private final java.util.Map<String, Integer> stockQtyMap   = new java.util.HashMap<>();
+    // per-product order cap (stock_limit column) — customer cannot add more than this per session
+    private final java.util.Map<String, Integer> stockLimitMap = new java.util.HashMap<>();
 
     /**
      * Creates new form HomePage with a known username.
@@ -295,15 +298,15 @@ public class HomePage extends javax.swing.JFrame {
         cataloguePanel.setBackground(BG);
         cataloguePanel.setAlignmentX(LEFT_ALIGNMENT);
 
-        filterRow.setBackground(BG);
-        filterRow.setAlignmentX(LEFT_ALIGNMENT);
-        filterRow.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
-        buildFilterButtons();
+        // no category filter buttons — remove the empty filterRow panel so it doesnt overlap
+        cataloguePanel.remove(filterRow);
 
         buildProductTable();
 
-        contentPanel.add(Box.createVerticalStrut(24));
-        contentPanel.add(buildCustomerServices());
+        if (!"Guest".equals(username)) {
+            contentPanel.add(Box.createVerticalStrut(24));
+            contentPanel.add(buildCustomerServices());
+        }
 
         contentPanel.revalidate();
         contentPanel.repaint();
@@ -345,13 +348,11 @@ public class HomePage extends javax.swing.JFrame {
     }
 
     private void buildPromoCards() {
+        java.util.List<PromoManager.Campaign> active = PromoManager.getActiveCampaigns();
         java.util.List<JPanel> cards = new java.util.ArrayList<>();
-        for (PromoManager.PromoConfig cfg : PromoManager.ALL_PROMOS) {
-            if (PromoManager.isEnabled(cfg.code)) {
-                final String code = cfg.code;
-                cards.add(makePromoCard(cfg.tag, cfg.name, cfg.desc,
-                    () -> activatePromo(code)));
-            }
+        for (PromoManager.Campaign camp : active) {
+            final String id = camp.id;
+            cards.add(makePromoCard(camp, () -> activatePromo(id)));
         }
         if (cards.isEmpty()) {
             promoPanel.setLayout(new BorderLayout());
@@ -365,7 +366,16 @@ public class HomePage extends javax.swing.JFrame {
         }
     }
 
-    private JPanel makePromoCard(String tag, String name, String desc, Runnable onClick) {
+    // builds a promo card for an active campaign showing its name, discounts and dates
+    private JPanel makePromoCard(PromoManager.Campaign camp, Runnable onClick) {
+        // build a short discount summary, e.g. "Aspirin 20%, Paracetamol 15%"
+        StringBuilder discSb = new StringBuilder();
+        for (java.util.Map.Entry<String, Double> e : camp.itemDiscounts.entrySet()) {
+            if (discSb.length() > 0) discSb.append(", ");
+            discSb.append(e.getKey()).append(" ").append((int) Math.round(e.getValue())).append("% off");
+        }
+        String desc = discSb.length() > 0 ? discSb.toString() : "Special discount event";
+
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -391,11 +401,11 @@ public class HomePage extends javax.swing.JFrame {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
 
-        JLabel tagLbl = new JLabel(tag);
+        JLabel tagLbl = new JLabel("PROMO");
         tagLbl.setFont(new Font("Segoe UI", Font.BOLD, 9));
         tagLbl.setForeground(NEON_LT);
 
-        JLabel nameLbl = new JLabel(name);
+        JLabel nameLbl = new JLabel(camp.name);
         nameLbl.setFont(new Font("Trebuchet MS", Font.BOLD, 14));
         nameLbl.setForeground(Color.WHITE);
 
@@ -403,7 +413,19 @@ public class HomePage extends javax.swing.JFrame {
         descLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         descLbl.setForeground(new Color(255, 255, 255, 115));
 
-        JLabel ctaLbl = new JLabel("APPLY PROMO \u2192");
+        // show the date range if admin has set one
+        String dateText = "";
+        if (camp.startDate != null || camp.endDate != null) {
+            String s = camp.startDate != null ? camp.startDate.format(PromoManager.DATE_FMT) : "Now";
+            String e = camp.endDate   != null ? camp.endDate.format(PromoManager.DATE_FMT)   : "Ongoing";
+            dateText = s + " \u2014 " + e;
+        }
+        JLabel dateLbl = new JLabel(dateText);
+        dateLbl.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+        dateLbl.setForeground(new Color(255, 255, 255, 80));
+        dateLbl.setVisible(!dateText.isEmpty());
+
+        JLabel ctaLbl = new JLabel("APPLY PROMO");
         ctaLbl.setFont(new Font("Segoe UI", Font.BOLD, 10));
         ctaLbl.setForeground(NEON);
         ctaLbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -413,7 +435,10 @@ public class HomePage extends javax.swing.JFrame {
         card.add(nameLbl);
         card.add(Box.createVerticalStrut(4));
         card.add(descLbl);
+        card.add(Box.createVerticalStrut(6));
+        card.add(dateLbl);
         card.add(Box.createVerticalGlue());
+        card.add(Box.createVerticalStrut(4));
         card.add(ctaLbl);
 
         card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -433,85 +458,46 @@ public class HomePage extends javax.swing.JFrame {
         return card;
     }
 
-    private void buildFilterButtons() {
-        filterRow.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        String[] labels = {"All", "OTC", "Supplements", "Skincare"};
-        for (int i = 0; i < labels.length; i++) {
-            JButton pill = new JButton(labels[i]);
-            pill.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            pill.setFocusPainted(false);
-            pill.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            pill.setOpaque(true);
-            if (i == 0) {
-                setFilterActive(pill);
-                activeFilterBtn = pill;
-            } else {
-                setFilterInactive(pill);
+    // loads products from the database instead of hardcoded fake ones
+    // if the db is down it shows an error popup so the user knows whats happening
+    private void loadProductsFromDB() {
+        java.util.List<Object[]> rows = new java.util.ArrayList<>();
+        stockQtyMap.clear();
+        stockLimitMap.clear();
+        try (java.sql.Connection con = DBConnection.getConnection();
+             java.sql.Statement st = con.createStatement();
+             java.sql.ResultSet rs = st.executeQuery(
+                 "SELECT name, description, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
+            while (rs.next()) {
+                int qty = rs.getInt("quantity");
+                int lim = rs.getInt("stock_limit");
+                String name = rs.getString("name");
+                stockQtyMap.put(name, qty);
+                stockLimitMap.put(name, lim);
+                // qty=0 → no stock, qty<stock_limit → pharmacy is running low, else in stock
+                String status = qty == 0 ? "NO STOCK"
+                              : qty < lim ? "LOW STOCK"
+                              : "IN STOCK";
+                rows.add(new Object[]{
+                    name,
+                    rs.getString("description"),
+                    String.format("\u00a3%.2f", rs.getDouble("price")),
+                    status,
+                    "ADD"
+                });
             }
-            pill.addActionListener(e -> {
-                if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
-                activeFilterBtn = pill;
-                setFilterActive(pill);
-                activeFilterCategory = pill.getText();
-                activePromo = null;
-                searchField.setText("");
-                updatePromoBanner();
-                filterTable();
-            });
-            filterRow.add(pill);
+        } catch (java.sql.SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Could not load products: " + ex.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
         }
+        allProductData = rows.toArray(new Object[0][]);
     }
 
-    private void setFilterActive(JButton btn) {
-        btn.setBackground(NEON);
-        btn.setForeground(Color.WHITE);
-        btn.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-    }
-
-    private void setFilterInactive(JButton btn) {
-        btn.setBackground(new Color(0x0b1220));
-        btn.setForeground(new Color(200, 200, 200));
-        btn.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
-    }
-    // temporary placeholder info
     private void buildProductTable() {
-        String[] cols = {"PRODUCT", "CATEGORY", "UNIT PRICE", "STOCK", "QTY", ""};
-        allProductData = new Object[][] {
-            {"Paracetamol 500mg \u00d7 16",         "OTC",         "\u00a30.89",  "IN STOCK",  1, "ADD"},
-            {"Paracetamol 500mg \u00d7 32",         "OTC",         "\u00a31.49",  "IN STOCK",  1, "ADD"},
-            {"Ibuprofen 200mg \u00d7 24",           "OTC",         "\u00a31.29",  "LOW STOCK", 1, "ADD"},
-            {"Ibuprofen 400mg \u00d7 24",           "OTC",         "\u00a32.19",  "IN STOCK",  1, "ADD"},
-            {"Aspirin 75mg \u00d7 28",              "OTC",         "\u00a31.49",  "IN STOCK",  1, "ADD"},
-            {"Codeine 8mg \u00d7 24",               "OTC",         "\u00a33.99",  "IN STOCK",  1, "ADD"},
-            {"Cetirizine 10mg \u00d7 30 (Hayfever)","OTC",         "\u00a33.19",  "IN STOCK",  1, "ADD"},
-            {"Loratadine 10mg \u00d7 30 (Hayfever)","OTC",         "\u00a32.49",  "IN STOCK",  1, "ADD"},
-            {"Chlorphenamine 4mg \u00d7 28 (Hayfever)","OTC",      "\u00a31.89",  "IN STOCK",  1, "ADD"},
-            {"Piriton Allergy \u00d7 30 (Hayfever)","OTC",         "\u00a34.29",  "IN STOCK",  1, "ADD"},
-            {"Beconase Nasal Spray (Hayfever)",     "OTC",         "\u00a36.99",  "LOW STOCK", 1, "ADD"},
-            {"Benadryl Allergy \u00d7 12 (Hayfever)","OTC",        "\u00a35.99",  "IN STOCK",  1, "ADD"},
-            {"Gaviscon Liquid 300ml",               "OTC",         "\u00a35.49",  "IN STOCK",  1, "ADD"},
-            {"Rennies Antacid \u00d7 48",           "OTC",         "\u00a33.29",  "IN STOCK",  1, "ADD"},
-            {"Loperamide 2mg \u00d7 12",            "OTC",         "\u00a32.99",  "IN STOCK",  1, "ADD"},
-            {"Buscopan IBS Relief \u00d7 20",       "OTC",         "\u00a34.99",  "IN STOCK",  1, "ADD"},
-            {"Vitamin C 1000mg \u00d7 30",          "Supplements", "\u00a34.49",  "IN STOCK",  1, "ADD"},
-            {"Vitamin D3 1000IU \u00d7 90",         "Supplements", "\u00a35.99",  "IN STOCK",  1, "ADD"},
-            {"Vitamin B12 1000mcg \u00d7 60",       "Supplements", "\u00a37.49",  "IN STOCK",  1, "ADD"},
-            {"Omega-3 Fish Oil \u00d7 90",          "Supplements", "\u00a38.99",  "IN STOCK",  1, "ADD"},
-            {"Zinc 25mg \u00d7 60",                 "Supplements", "\u00a36.49",  "NO STOCK",  0, "ADD"},
-            {"Magnesium 375mg \u00d7 60",           "Supplements", "\u00a36.99",  "IN STOCK",  1, "ADD"},
-            {"Evening Primrose 1000mg \u00d7 60",   "Supplements", "\u00a38.49",  "IN STOCK",  1, "ADD"},
-            {"Iron 14mg \u00d7 90",                 "Supplements", "\u00a35.49",  "IN STOCK",  1, "ADD"},
-            {"Multivitamin A-Z \u00d7 90",          "Supplements", "\u00a39.99",  "IN STOCK",  1, "ADD"},
-            {"Biotin 10000mcg \u00d7 60",           "Supplements", "\u00a311.99", "LOW STOCK", 1, "ADD"},
-            {"Collagen Peptides \u00d7 60",         "Supplements", "\u00a314.99", "IN STOCK",  1, "ADD"},
-            {"E45 Moisturising Cream 500g",         "Skincare",    "\u00a36.99",  "IN STOCK",  1, "ADD"},
-            {"Sudocrem Antiseptic Cream 250g",      "Skincare",    "\u00a34.49",  "IN STOCK",  1, "ADD"},
-            {"CeraVe Moisturiser 236ml",            "Skincare",    "\u00a39.99",  "IN STOCK",  1, "ADD"},
-            {"Hydrocortisone 0.5% Cream 15g",       "Skincare",    "\u00a32.99",  "IN STOCK",  1, "ADD"},
-            {"Germolene Antiseptic Cream 30g",      "Skincare",    "\u00a33.49",  "IN STOCK",  1, "ADD"},
-            {"Savlon Antiseptic Cream 30g",         "Skincare",    "\u00a32.99",  "LOW STOCK", 1, "ADD"},
-            {"Diprobase Emollient Cream 500g",      "Skincare",    "\u00a37.99",  "IN STOCK",  1, "ADD"},
-        };
+        // columns: name, description, price, stock status (colour coded), add button
+        String[] cols = {"NAME", "DESCRIPTION", "PRICE", "STOCK", ""};
+        loadProductsFromDB();
         productModel = new DefaultTableModel(allProductData, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -525,6 +511,8 @@ public class HomePage extends javax.swing.JFrame {
         table.setSelectionBackground(new Color(37, 99, 168, 50));
         table.setSelectionForeground(Color.WHITE);
         table.setFillsViewportHeight(true);
+        // makes columns fill the full available width so nothing hangs outside
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         JTableHeader header = table.getTableHeader();
         header.setBackground(new Color(0x0a1018));
@@ -534,15 +522,17 @@ public class HomePage extends javax.swing.JFrame {
         header.setReorderingAllowed(false);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 60)));
 
-        // changes color when no stock
+        // stock is column 3 — colour rows red when no stock
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 super.getTableCellRendererComponent(t, v, sel, foc, r, c);
                 String stock = t.getModel().getValueAt(r, 3) != null
                     ? t.getModel().getValueAt(r, 3).toString() : "";
-                boolean noStock = "NO STOCK".equals(stock);
-                if (noStock) {
+                boolean noStock  = "NO STOCK".equals(stock);
+                boolean atLimit  = "LIMIT".equals(stock);
+                boolean dimmed   = noStock || atLimit;
+                if (dimmed) {
                     setBackground(new Color(0x1a0808));
                     setForeground(new Color(255, 255, 255, 80));
                 } else {
@@ -551,33 +541,38 @@ public class HomePage extends javax.swing.JFrame {
                 }
                 setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
                 if (sel) setBackground(new Color(37, 99, 168, 50));
+                // stock column is 3 — colour it green/amber/red/orange
                 if (c == 3) {
                     if ("IN STOCK".equals(stock))   setForeground(new Color(0x4ade80));
                     if ("LOW STOCK".equals(stock))  setForeground(new Color(0xfbbf24));
                     if ("NO STOCK".equals(stock))   setForeground(new Color(0xf87171));
+                    if ("LIMIT".equals(stock))      setForeground(new Color(0xf97316)); // orange
                 }
                 return this;
             }
         };
+        // apply to name, description, price, stock (cols 0-3)
         for (int i = 0; i < 4; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
+        // price renderer — column 2, reads stock from col 3, applies per-item campaign discount
         table.getColumnModel().getColumn(2).setCellRenderer((t, v, sel, foc, r, c) -> {
             String stock = t.getModel().getValueAt(r, 3) != null
                 ? t.getModel().getValueAt(r, 3).toString() : "";
-            boolean noStock = "NO STOCK".equals(stock);
-            String category = t.getModel().getValueAt(r, 1) != null
-                ? t.getModel().getValueAt(r, 1).toString() : "";
+            boolean noStock = "NO STOCK".equals(stock) || "LIMIT".equals(stock);
             Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
             if (sel) bg = new Color(37, 99, 168, 50);
 
-            PromoManager.PromoConfig activeCfg = activePromo != null
-                ? PromoManager.getConfig(activePromo) : null;
-            boolean applyDiscount = activeCfg != null && activeCfg.discountRate < 1.0
-                && ("All".equals(activeCfg.discountCategory)
-                    || activeCfg.discountCategory.equals(category))
-                && !noStock;
+            // look up per-item discount for this specific product from the active campaign
+            String prodName = t.getModel().getValueAt(r, 0) != null
+                ? t.getModel().getValueAt(r, 0).toString() : "";
+            PromoManager.Campaign activeCamp = PromoManager.getCampaign(activePromo);
+            double discountRate = activeCamp != null
+                ? PromoManager.getItemDiscountRate(activePromo, prodName) : 1.0;
+            boolean promoApplies  = discountRate < 1.0 && !noStock;
+            boolean loyaltyApplies = OrderManager.isLoyaltyOrder() && !noStock;
+            boolean applyDiscount = promoApplies || loyaltyApplies;
             JPanel cell = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 16, 0));
             cell.setOpaque(true);
             cell.setBackground(bg);
@@ -586,7 +581,8 @@ public class HomePage extends javax.swing.JFrame {
                 String orig = v != null ? v.toString() : "";
                 try {
                     double price = Double.parseDouble(orig.replace("\u00a3", ""));
-                    double disc  = Math.round(price * activeCfg.discountRate * 100.0) / 100.0;
+                    double rate  = (promoApplies ? discountRate : 1.0) * (loyaltyApplies ? 0.9 : 1.0);
+                    double disc  = Math.round(price * rate * 100.0) / 100.0;
                     JLabel discLbl = new JLabel(String.format("\u00a3%.2f", disc));
                     discLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
                     discLbl.setForeground(new Color(0x4ade80));
@@ -610,64 +606,75 @@ public class HomePage extends javax.swing.JFrame {
         });
 
 
+        // add button — column 4; OUT when no stock, LIMIT when customer hit order cap
         table.getColumnModel().getColumn(4).setCellRenderer((t, v, sel, foc, r, c) -> {
             String stock = t.getModel().getValueAt(r, 3) != null
                 ? t.getModel().getValueAt(r, 3).toString() : "";
             boolean noStock = "NO STOCK".equals(stock);
-            JLabel lbl = new JLabel(noStock ? "\u2014" : (v != null ? v.toString() : "1"), SwingConstants.CENTER);
-            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            lbl.setForeground(noStock ? new Color(255, 255, 255, 50) : new Color(255, 255, 255, 200));
-            lbl.setOpaque(true);
-            lbl.setBackground(noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018)));
-            lbl.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-            return lbl;
-        });
-        table.getColumnModel().getColumn(4).setPreferredWidth(55);
-        table.getColumnModel().getColumn(4).setMaxWidth(70);
-
-        //showing when not in stock
-        table.getColumnModel().getColumn(5).setCellRenderer((t, v, sel, foc, r, c) -> {
-            String stock = t.getModel().getValueAt(r, 3) != null
-                ? t.getModel().getValueAt(r, 3).toString() : "";
-            boolean noStock = "NO STOCK".equals(stock);
-            JButton btn = new JButton(noStock ? "OUT" : "+ ADD");
-            btn.setBackground(noStock ? new Color(0x3a1010) : NEON);
-            btn.setForeground(noStock ? new Color(255, 255, 255, 70) : Color.WHITE);
+            boolean atLimit = "LIMIT".equals(stock);
+            boolean blocked = noStock || atLimit;
+            JButton btn = new JButton(noStock ? "OUT" : atLimit ? "LIMIT" : "+ ADD");
+            btn.setBackground(blocked ? new Color(0x3a1010) : NEON);
+            btn.setForeground(blocked ? new Color(255, 255, 255, 70) : Color.WHITE);
             btn.setFont(new Font("Segoe UI", Font.BOLD, 10));
             btn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             btn.setFocusPainted(false);
             btn.setOpaque(true);
             JPanel wrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
-            wrap.setBackground(noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018)));
+            wrap.setBackground(blocked ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018)));
             wrap.add(btn);
             return wrap;
         });
-        table.getColumnModel().getColumn(5).setPreferredWidth(90);
-        table.getColumnModel().getColumn(5).setMaxWidth(110);
+        table.getColumnModel().getColumn(4).setPreferredWidth(90);
+        table.getColumnModel().getColumn(4).setMaxWidth(110);
 
-        //clicking motion so it adds to cart
+        // pin the narrow columns so price/stock/add dont balloon out
+        table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        table.getColumnModel().getColumn(2).setMaxWidth(140);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setMaxWidth(130);
+
+        // clicking the add button (column 4) adds item to cart, enforces stock limit,
+        // then refreshes stock status colours across the whole table
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
-                if (col == 5 && row >= 0) {
+                if (col == 4 && row >= 0) {
                     Object stockVal = productModel.getValueAt(row, 3);
-                    if (stockVal != null && !"NO STOCK".equals(stockVal.toString())) {
+                    String stockStr = stockVal != null ? stockVal.toString() : "";
+                    // block if no stock or customer already hit the per-order limit
+                    if (!"NO STOCK".equals(stockStr) && !"LIMIT".equals(stockStr)) {
                         String prodName  = productModel.getValueAt(row, 0).toString();
-                        String category  = productModel.getValueAt(row, 1).toString();
                         String priceStr  = productModel.getValueAt(row, 2).toString()
                                                .replace("\u00a3", "").trim();
+                        // extra safety check: cart qty must be under the stock_limit cap
+                        int limitQty = stockLimitMap.getOrDefault(prodName, Integer.MAX_VALUE);
+                        int cartQty  = 0;
+                        for (CartManager.CartItem it : CartManager.getItems()) {
+                            if (it.name.equals(prodName)) { cartQty = it.qty; break; }
+                        }
+                        if (cartQty >= limitQty) return; // already at the per-order cap
                         try {
                             double unitPrice = Double.parseDouble(priceStr);
-                            PromoManager.PromoConfig clickCfg = activePromo != null
-                                ? PromoManager.getConfig(activePromo) : null;
-                            if (clickCfg != null && clickCfg.discountRate < 1.0
-                                    && ("All".equals(clickCfg.discountCategory)
-                                        || clickCfg.discountCategory.equals(category))) {
-                                unitPrice = Math.round(unitPrice * clickCfg.discountRate * 100.0) / 100.0;
+                            // apply per-item discount from active campaign if this product has one
+                            double itemRate = PromoManager.getItemDiscountRate(activePromo, prodName);
+                            if (itemRate < 1.0) {
+                                unitPrice = Math.round(unitPrice * itemRate * 100.0) / 100.0;
                             }
-                            CartManager.addItem(prodName, category, unitPrice, 1);
+                            // loyalty 10% off on every 10th order
+                            if (OrderManager.isLoyaltyOrder()) {
+                                unitPrice = Math.round(unitPrice * 0.9 * 100.0) / 100.0;
+                            }
+                            CartManager.addItem(prodName, "", unitPrice, 1, limitQty);
                         } catch (NumberFormatException ignored) {}
+
+                        // recompute stock status for every row so colours update live
+                        for (Object[] dataRow : allProductData) {
+                            dataRow[3] = computeStockStatus(dataRow[0].toString());
+                        }
+                        filterTable(); // repopulates the model with new statuses
+
                         cartCount = CartManager.getTotalCount();
                         cartButton.repaint();
                     }
@@ -697,9 +704,25 @@ public class HomePage extends javax.swing.JFrame {
         promoBannerLbl.setVisible(false);
         cataloguePanel.add(promoBannerLbl);
 
+        // loyalty banner shown when the next order will be a 10th milestone
+        loyaltyBannerLbl = new JLabel(
+            "  LOYALTY REWARD \u2014 This is your 10th order! 10% off everything. Prices below include your discount.");
+        loyaltyBannerLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        loyaltyBannerLbl.setForeground(new Color(0xfbbf24));
+        loyaltyBannerLbl.setOpaque(true);
+        loyaltyBannerLbl.setBackground(new Color(0x1a1200));
+        loyaltyBannerLbl.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(251, 191, 36, 60)),
+            BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+        loyaltyBannerLbl.setAlignmentX(LEFT_ALIGNMENT);
+        loyaltyBannerLbl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        loyaltyBannerLbl.setVisible(OrderManager.isLoyaltyOrder());
+        cataloguePanel.add(loyaltyBannerLbl);
+
         JScrollPane sp = new JScrollPane(table);
         sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 60), 1));
         sp.getViewport().setBackground(PANEL);
+        sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         sp.setAlignmentX(LEFT_ALIGNMENT);
         sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
@@ -774,41 +797,45 @@ public class HomePage extends javax.swing.JFrame {
         return card;
     }
 
-    // table filter and search
+    // calculates the status to show in the stock column
+    // db qty drives IN STOCK / LOW STOCK / NO STOCK; cart vs stock_limit drives LIMIT
+    private String computeStockStatus(String name) {
+        int dbQty  = stockQtyMap.getOrDefault(name, 0);
+        int lim    = stockLimitMap.getOrDefault(name, Integer.MAX_VALUE);
+        int cartQty = 0;
+        for (CartManager.CartItem it : CartManager.getItems()) {
+            if (it.name.equals(name)) { cartQty = it.qty; break; }
+        }
+        if (dbQty == 0) return "NO STOCK";
+        if (cartQty >= lim) return "LIMIT";   // customer has hit the per-order cap
+        if (dbQty < lim)    return "LOW STOCK"; // pharmacy running below its own reorder threshold
+        return "IN STOCK";
+    }
+
+    // table search filter — matches on name (col 0) or description (col 1)
     private void filterTable() {
         if (productModel == null || allProductData == null) return;
         String query = searchField.getText().toLowerCase().trim();
-        String cat   = activeFilterCategory == null ? "All" : activeFilterCategory;
         productModel.setRowCount(0);
         for (Object[] row : allProductData) {
             boolean matchesSearch = query.isEmpty()
                 || row[0].toString().toLowerCase().contains(query)
                 || row[1].toString().toLowerCase().contains(query);
-            boolean matchesCategory = "All".equals(cat)
-                || row[1].toString().equalsIgnoreCase(cat);
-            if (matchesSearch && matchesCategory) {
+            if (matchesSearch) {
                 productModel.addRow(row);
             }
         }
         if (productTable != null) productTable.repaint();
     }
 
-    private void activatePromo(String promoCode) {
-        activePromo = promoCode;
-        PromoManager.PromoConfig cfg = PromoManager.getConfig(promoCode);
-        if (cfg != null) {
-            activeFilterCategory = cfg.discountCategory;
-            if (activeFilterBtn != null) setFilterInactive(activeFilterBtn);
-            for (java.awt.Component c : filterRow.getComponents()) {
-                if (c instanceof JButton && cfg.discountCategory.equals(((JButton) c).getText())) {
-                    activeFilterBtn = (JButton) c;
-                    setFilterActive(activeFilterBtn);
-                    break;
-                }
-            }
-            searchField.setText("");
-            filterTable();
-        }
+    private void activatePromo(String campaignId) {
+        activePromo = campaignId;
+        // tell promo manager which campaign is active so cart can record purchases on checkout
+        PromoManager.setUserActivePromo(campaignId);
+        // count as a hit for the engagement report
+        PromoManager.recordHit(campaignId);
+        searchField.setText("");
+        filterTable();
         updatePromoBanner();
     }
 
@@ -818,14 +845,17 @@ public class HomePage extends javax.swing.JFrame {
             promoBannerLbl.setVisible(false);
             return;
         }
-        PromoManager.PromoConfig cfg = PromoManager.getConfig(activePromo);
-        if (cfg != null) {
-            int pct = (int) Math.round((1.0 - cfg.discountRate) * 100);
-            String catText = "All".equals(cfg.discountCategory)
-                ? "all products" : cfg.discountCategory + " products";
-            promoBannerLbl.setText("  PROMO ACTIVE \u2014 " + cfg.name
-                + ". " + pct + "% off " + catText
-                + ". Prices below are discounted. Click + ADD to buy at sale price.");
+        PromoManager.Campaign camp = PromoManager.getCampaign(activePromo);
+        if (camp != null) {
+            // build discount summary for the banner
+            StringBuilder sb = new StringBuilder();
+            for (java.util.Map.Entry<String, Double> e : camp.itemDiscounts.entrySet()) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(e.getKey()).append(" (").append((int) Math.round(e.getValue())).append("% off)");
+            }
+            String items = sb.length() > 0 ? sb.toString() : "selected items";
+            promoBannerLbl.setText("  PROMO ACTIVE \u2014 " + camp.name
+                + ". Discounts on: " + items + ". Discounted prices shown below.");
         }
         promoBannerLbl.setVisible(true);
         cataloguePanel.revalidate();

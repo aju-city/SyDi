@@ -271,7 +271,7 @@ public class CartPage extends javax.swing.JFrame {
             JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 8));
             p.setBackground(rowBg);
 
-            JLabel minus = new JLabel("\u2212");
+            JLabel minus = new JLabel("-");
             minus.setFont(new Font("Segoe UI", Font.BOLD, 13));
             minus.setForeground(NEON_LT);
             minus.setOpaque(true);
@@ -336,11 +336,26 @@ public class CartPage extends javax.swing.JFrame {
                     if (!isMinus && !isPlus) return;
 
                     int qty = (Integer) cartModel.getValueAt(row, 2);
-                    if (isMinus) qty--;
-                    else qty++;
+
+                    String rawProduct = cartModel.getValueAt(row, 0).toString();
+                    int sepIdx = rawProduct.lastIndexOf("  (");
+                    String prodName = sepIdx >= 0 ? rawProduct.substring(0, sepIdx) : rawProduct;
+
+                    if (isPlus) {
+                        // enforce stock limit — look up the cap stored on the CartItem
+                        int limit = Integer.MAX_VALUE;
+                        for (CartManager.CartItem ci : CartManager.getItems()) {
+                            if (ci.name.equals(prodName)) { limit = ci.stockLimit; break; }
+                        }
+                        if (qty >= limit) return; // already at cap, do nothing
+                        qty++;
+                    } else {
+                        qty--;
+                    }
 
                     if (qty <= 0) {
                         cartModel.removeRow(row);
+                        CartManager.removeItem(prodName);
                     } else {
                         cartModel.setValueAt(qty, row, 2);
                         String priceStr = cartModel.getValueAt(row, 1).toString().replace("\u00a3", "");
@@ -348,10 +363,15 @@ public class CartPage extends javax.swing.JFrame {
                             double unitPrice = Double.parseDouble(priceStr);
                             cartModel.setValueAt(String.format("\u00a3%.2f", unitPrice * qty), row, 3);
                         } catch (NumberFormatException ignored) {}
+                        CartManager.setQty(prodName, qty);
                     }
                     updateTotals();
                 } else if (col == 4) {
+                    String rawProduct = cartModel.getValueAt(row, 0).toString();
+                    int sepIdx = rawProduct.lastIndexOf("  (");
+                    String prodName = sepIdx >= 0 ? rawProduct.substring(0, sepIdx) : rawProduct;
                     cartModel.removeRow(row);
+                    CartManager.removeItem(prodName);
                     updateTotals();
                 }
             }
@@ -455,10 +475,19 @@ public class CartPage extends javax.swing.JFrame {
         return card;
     }
     private JPanel buildPaymentSection() {
+        boolean guest = "Guest".equals(username);
         JPanel card = makeCard();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.add(sectionLabel("PAYMENT DETAILS"));
         card.add(Box.createVerticalStrut(12));
+
+        // guest-only fields
+        JTextField emailField   = styledField("Email address");
+        JTextField addressField = styledField("Delivery address");
+        if (guest) {
+            card.add(fieldBlock("EMAIL", emailField));         card.add(Box.createVerticalStrut(10));
+            card.add(fieldBlock("DELIVERY ADDRESS", addressField)); card.add(Box.createVerticalStrut(14));
+        }
 
         JTextField   nameField   = styledField("Name on card");
         JTextField   cardField   = styledField("Card number (16 digits)");
@@ -500,6 +529,16 @@ public class CartPage extends javax.swing.JFrame {
             if (cartModel.getRowCount() == 0) {
                 errLbl.setText("Your cart is empty."); return;
             }
+            if (guest) {
+                String em   = emailField.getText().trim();
+                String addr = addressField.getText().trim();
+                if (em.isEmpty() || em.equals("Email address") || !em.contains("@")) {
+                    errLbl.setText("Please enter a valid email address."); return;
+                }
+                if (addr.isEmpty() || addr.equals("Delivery address")) {
+                    errLbl.setText("Please enter your delivery address."); return;
+                }
+            }
             if (name.isEmpty() || name.equals("Name on card")) {
                 errLbl.setText("Please enter the name on your card."); return;
             }
@@ -514,6 +553,14 @@ public class CartPage extends javax.swing.JFrame {
             }
 
             OrderManager.placeOrder(CartManager.getItems(), calcSubtotal());
+            // if a promo was active record how many items were purchased under it before we clear the cart
+            String activeP = PromoManager.getUserActivePromo();
+            if (activeP != null) {
+                int totalQty = 0;
+                for (CartManager.CartItem it : CartManager.getItems()) totalQty += it.qty;
+                PromoManager.recordPurchase(activeP, totalQty);
+                PromoManager.setUserActivePromo(null);
+            }
             CartManager.clear();
             paymentCard.setVisible(false);
             successCard.setVisible(true);
@@ -546,7 +593,7 @@ public class CartPage extends javax.swing.JFrame {
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 22));
                 g2.setColor(GREEN);
                 FontMetrics fm = g2.getFontMetrics();
-                String check = "\u2713";
+                String check = "OK";
                 g2.drawString(check,
                     (getWidth()  - fm.stringWidth(check)) / 2,
                     (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
@@ -578,11 +625,12 @@ public class CartPage extends javax.swing.JFrame {
             BorderFactory.createEmptyBorder(8, 20, 8, 20)
         ));
 
+        String noteText = "Guest".equals(username)
+            ? "Your order has been placed. A confirmation will be sent to the email you provided."
+            : "A confirmation email has been sent to your registered address.<br>Use <b>Track Order</b> on the home page to follow your delivery.";
         JLabel emailNote = new JLabel(
             "<html><div style='text-align:center;color:rgba(255,255,255,0.5)'>"
-            + "A confirmation email has been sent to your registered address.<br>"
-            + "Use <b>Track Order</b> on the home page to follow your delivery."
-            + "</div></html>");
+            + noteText + "</div></html>");
         emailNote.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         emailNote.setForeground(new Color(255, 255, 255, 80));
         emailNote.setAlignmentX(CENTER_ALIGNMENT);

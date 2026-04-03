@@ -71,7 +71,7 @@ public class ViewInvoicesPage extends javax.swing.JFrame {
         welcomeLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         welcomeLbl.setForeground(new Color(255, 255, 255, 110));
 
-        JButton backBtn = new JButton("\u2190 Back to Home");
+        JButton backBtn = new JButton("Back to Home");
         backBtn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         backBtn.setForeground(new Color(255, 255, 255, 160));
         backBtn.setBackground(new Color(0x0b1220));

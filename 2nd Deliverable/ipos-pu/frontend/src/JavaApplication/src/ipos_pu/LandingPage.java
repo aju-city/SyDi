@@ -130,6 +130,13 @@ private void styleComponents() {
     styleButton(loginButton, true);
     styleButton(registerButton, false);
 
+    JButton guestButton = new JButton("CONTINUE AS GUEST");
+    styleButton(guestButton, false);
+    guestButton.addActionListener(e -> {
+        dispose();
+        new HomePage("Guest").setVisible(true);
+    });
+
     contentPanel.add(Box.createVerticalGlue());
     contentPanel.add(accent);
     contentPanel.add(Box.createVerticalStrut(26));
@@ -144,6 +151,8 @@ private void styleComponents() {
     contentPanel.add(loginButton);
     contentPanel.add(Box.createVerticalStrut(22));
     contentPanel.add(registerButton);
+    contentPanel.add(Box.createVerticalStrut(22));
+    contentPanel.add(guestButton);
     contentPanel.add(Box.createVerticalGlue());
 
     getContentPane().revalidate();

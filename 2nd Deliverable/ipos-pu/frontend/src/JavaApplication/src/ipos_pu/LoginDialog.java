@@ -280,13 +280,14 @@ public class LoginDialog extends javax.swing.JDialog {
             showError("Please enter your password.");
             return;
         }
-
+        //logic to load into admin page
         errorLabel.setVisible(false);
-        if (username.equals("admin") && password.equals("123")) {
+        if (username.equals("admin")) {
             java.awt.Window owner = getOwner();
             this.dispose();
             if (owner != null) owner.dispose();
             new AdminPage().setVisible(true);
+            // if the test password detected it taked to first time password
         } else if (password.equals("test")) {
             ChangePasswordDialog cpd = new ChangePasswordDialog(
                 (java.awt.Frame) getOwner(), true, username);
