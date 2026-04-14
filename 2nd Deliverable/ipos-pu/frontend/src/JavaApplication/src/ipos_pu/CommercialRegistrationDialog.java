@@ -3,7 +3,13 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
  */
 package ipos_pu;
+import com.google.gson.Gson;
+
 import java.awt.*;
+
+import java.util.List;
+import java.util.ArrayList;
+
 import javax.swing.*;
 
 /**
@@ -467,20 +473,79 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void submitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_submitButtonActionPerformed
-        // TODO add your han wling code here:
-        String companyName = companyNameField.getText().trim();
-        String companyId   = companyIDField.getText().trim();
-        String email       = emailField.getText().trim();
+    private void submitButtonActionPerformed(java.awt.event.ActionEvent evt) {
+        System.out.println("SUBMIT CLICKED");
 
+        // Read company fields
+        String companyName   = companyNameField.getText().trim();
+        String companyId     = companyIDField.getText().trim();
+        String businessType  = BusinessTypeField.getText().trim();
+        String address       = jTextArea1.getText().trim();
+        String email         = emailField.getText().trim();
+        String phone         = "";   // company phone number
+
+        // Basic validation
         if (companyName.isEmpty() || companyId.isEmpty() || email.isEmpty()) {
             showError("Please complete all required fields.");
             return;
         }
 
-        errorLabel.setVisible(false);
-        this.dispose();
+        // Collect directors
+        int count = (int) directorSpinner.getValue();
+        List<Director> directors = new ArrayList<>();
+
+        for (int i = 1; i <= count; i++) {
+            JTextField first = (JTextField) findComponentByName(directorsPanel, "director" + i + "_firstname");
+            JTextField last  = (JTextField) findComponentByName(directorsPanel, "director" + i + "_lastname");
+            JTextField phoneField = (JTextField) findComponentByName(directorsPanel, "director" + i + "_phonenumber");
+
+            directors.add(new Director(
+                    first.getText().trim(),
+                    last.getText().trim(),
+                    phoneField.getText().trim()
+            ));
+        }
+
+        // Build request object
+        CommercialApplicationRequest req = new CommercialApplicationRequest();
+        req.companyName   = companyName;
+        req.regNumber     = companyId;
+        req.businessType  = businessType;
+        req.address       = address;
+        req.email         = email;
+        req.phone         = phone;
+        req.directors     = directors;
+
+        // Convert to JSON
+        String json = new Gson().toJson(req);
+
+        try {
+            // Send to backend
+            String response = HttpClient.postJson(
+                    "http://localhost:8080/api/commercial-application",
+                    json
+            );
+
+            JOptionPane.showMessageDialog(this, "Application submitted:\n" + response);
+            this.dispose();
+
+        } catch (Exception ex) {
+            showError("Submission failed: " + ex.getMessage());
+        }
     }//GEN-LAST:event_submitButtonActionPerformed
+
+    private Component findComponentByName(Container container, String name) {
+        for (Component c : container.getComponents()) {
+            if (name.equals(c.getName())) {
+                return c;
+            }
+            if (c instanceof Container) {
+                Component child = findComponentByName((Container) c, name);
+                if (child != null) return child;
+            }
+        }
+        return null;
+    }
 
     private void companyIDFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_companyIDFieldActionPerformed
         // TODO add your handling code here:
@@ -526,22 +591,35 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
             directorTitle.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 6, 4, 0));
             directorsPanel.add(directorTitle);
 
-            for (String[] pair : new String[][]{{"First Name", "15"}, {"Last Name", "15"}, {"Phone Number", "15"}}) {
-                javax.swing.JLabel lbl = new javax.swing.JLabel(pair[0]);
-                lbl.setForeground(java.awt.Color.WHITE);
-                lbl.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
+            for (String[] pair : new String[][]{
+                    {"First Name", "15"},
+                    {"Last Name", "15"},
+                    {"Phone Number", "15"}
+            }) {
+                JLabel lbl = new JLabel(pair[0]);
+                lbl.setForeground(Color.WHITE);
+                lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
-                javax.swing.JTextField field = new javax.swing.JTextField(Integer.parseInt(pair[1]));
+                JTextField field = new JTextField(Integer.parseInt(pair[1]));
                 field.setBackground(darkBg);
-                field.setForeground(java.awt.Color.WHITE);
-                field.setCaretColor(java.awt.Color.WHITE);
-                field.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
-                field.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-                    javax.swing.BorderFactory.createMatteBorder(0, 0, 1, 0, new java.awt.Color(37, 99, 168, 100)),
-                    javax.swing.BorderFactory.createEmptyBorder(4, 8, 4, 8)
+                field.setForeground(Color.WHITE);
+                field.setCaretColor(Color.WHITE);
+                field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                field.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
+                        BorderFactory.createEmptyBorder(4, 8, 4, 8)
                 ));
 
-                javax.swing.JPanel row = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 8, 4));
+                // Assign the correct name so submitButtonActionPerformed can find it
+                if (pair[0].equals("First Name")) {
+                    field.setName("director" + i + "_firstname");
+                } else if (pair[0].equals("Last Name")) {
+                    field.setName("director" + i + "_lastname");
+                } else if (pair[0].equals("Phone Number")) {
+                    field.setName("director" + i + "_phonenumber");
+                }
+
+                JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
                 row.setBackground(darkBg);
                 row.add(lbl);
                 row.add(field);

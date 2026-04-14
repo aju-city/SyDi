@@ -5,6 +5,10 @@
 package ipos_pu;
 
 import java.awt.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.swing.*;
 
 /**
@@ -128,7 +132,6 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
             showError("Please enter a new password.");
             return;
         }
-        // cant keep the temp password that was used to first log in
         if (newPass.equals("test")) {
             showError("You cannot keep the temporary password.");
             return;
@@ -142,10 +145,47 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
             return;
         }
 
-        java.awt.Window owner = getOwner();
-        dispose();
-        if (owner != null) owner.dispose();
-        new HomePage(username).setVisible(true);
+        try {
+            URL url = new URL("http://localhost:8080/api/change-password");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String json = "{ \"email\": \"" + username + "\", \"newPassword\": \"" + newPass + "\" }";
+            conn.getOutputStream().write(json.getBytes("UTF-8"));
+
+            // Read response
+            InputStream is = conn.getInputStream();
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            String response = result.toString("UTF-8");
+
+            com.google.gson.JsonObject obj =
+                    new com.google.gson.JsonParser().parse(response).getAsJsonObject();
+
+            boolean success = obj.get("success").getAsBoolean();
+
+            if (!success) {
+                String message = obj.get("message").getAsString();
+                showError(message);
+                return;
+            }
+
+            // Success → close dialog and open HomePage
+            java.awt.Window owner = getOwner();
+            dispose();
+            if (owner != null) owner.dispose();
+            new HomePage(username).setVisible(true);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Could not connect to server.");
+        }
     }
 
     // shows the red error label with the given message

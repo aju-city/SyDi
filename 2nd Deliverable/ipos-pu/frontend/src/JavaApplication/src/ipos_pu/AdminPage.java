@@ -79,7 +79,7 @@ public class AdminPage extends javax.swing.JFrame {
         List<String> names = new ArrayList<>();
         try (java.sql.Connection con = DBConnection.getConnection();
              java.sql.Statement st = con.createStatement();
-             java.sql.ResultSet rs = st.executeQuery("SELECT name FROM stock_items ORDER BY name")) {
+             java.sql.ResultSet rs = st.executeQuery("SELECT name FROM ipos_ca.stock_items ORDER BY name")) {
             while (rs.next()) names.add(rs.getString("name"));
         } catch (java.sql.SQLException ex) {
             // db might not be available, form will show empty dropdown

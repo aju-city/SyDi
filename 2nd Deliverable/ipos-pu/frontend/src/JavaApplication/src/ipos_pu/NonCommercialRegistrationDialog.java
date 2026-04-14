@@ -4,6 +4,11 @@
  */
 package ipos_pu;
 import java.awt.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import javax.swing.*;
 
 /**
@@ -236,8 +241,7 @@ public class NonCommercialRegistrationDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void registerButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registerButtonActionPerformed
-        // TODO add your handling code here:
+    private void registerButtonActionPerformed(java.awt.event.ActionEvent evt) {
         String email = emailField.getText().trim();
 
         if (email.isEmpty()) {
@@ -245,8 +249,34 @@ public class NonCommercialRegistrationDialog extends javax.swing.JDialog {
             return;
         }
 
-        errorLabel.setVisible(false);
-        this.dispose();
+        try {
+            URL url = new URL("http://localhost:8080/api/non-commercial/register");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String json = "{ \"email\": \"" + email + "\" }";
+            conn.getOutputStream().write(json.getBytes("UTF-8"));
+
+            // Java 8 compatible response reader
+            InputStream is = conn.getInputStream();
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+
+            while ((length = is.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+
+            String response = result.toString("UTF-8");
+
+            JOptionPane.showMessageDialog(this, response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Could not connect to server.");
+        }
     }//GEN-LAST:event_registerButtonActionPerformed
 
     /**

@@ -1,5 +1,8 @@
 package ipos_pu;
 
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,12 +15,16 @@ import java.util.List;
  */
 public class CartManager {
 
+    // guestToken for the guest cart
+    public static String guestToken = null;
+
     public static class CartItem {
         public String name;
         public String category;
         public double unitPrice;
         public int qty;
         public int stockLimit; // per-customer order cap from DB
+
 
         public CartItem(String name, String category, double unitPrice, int qty, int stockLimit) {
             this.name       = name;
@@ -35,15 +42,65 @@ public class CartManager {
      * If the same product (by name) is already in the cart, its quantity is
      * incremented rather than a duplicate row being created.
      */
-    public static void addItem(String name, String category, double unitPrice, int qty, int stockLimit) {
-        for (CartItem item : items) {
-            if (item.name.equals(name)) {
-                item.qty += qty;
-                item.stockLimit = stockLimit; // refresh in case it changed
-                return;
+    public static void addItem(String itemId, int qty) throws IOException {
+        URL url = new URL("http://localhost:8080/api/cart/add");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.setRequestProperty("Content-Type", "application/json");
+
+        System.out.println("DEBUG itemId sent = [" + itemId + "]");
+
+        String json = "{"
+                + "\"guestToken\":\"" + guestToken + "\","
+                + "\"itemId\":\"" + itemId + "\","
+                + "\"qty\":" + qty
+                + "}";
+
+        OutputStream os = conn.getOutputStream();
+        os.write(json.getBytes());
+        os.close();
+
+        int status = conn.getResponseCode();
+        if (status != 200) {
+            InputStream errorStream = conn.getErrorStream();
+            if (errorStream != null) {
+                String error = new String(errorStream.readAllBytes());
+                System.out.println("Backend error: " + error);
             }
+            throw new IOException("Server returned status: " + status);
         }
-        items.add(new CartItem(name, category, unitPrice, qty, stockLimit));
+    }
+
+    public static String createGuestCartOnBackend() throws IOException {
+        URL url = new URL("http://localhost:8080/api/cart/create-guest");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+
+        int status = conn.getResponseCode();
+
+        InputStream stream = (status == 200)
+                ? conn.getInputStream()
+                : conn.getErrorStream();
+
+        String response = new String(stream.readAllBytes());
+        System.out.println("Guest cart response: " + response);
+
+        // Check for backend error
+        if (status != 200 || response.contains("error")) {
+            throw new IOException("Failed to create guest cart: " + response);
+        }
+
+        // Extract token properly
+        String token = response
+                .replace("{", "")
+                .replace("}", "")
+                .replace("\"", "")
+                .split(":")[1]
+                .trim();
+
+        return token;
     }
 
     /** Returns a snapshot of all current cart items. */

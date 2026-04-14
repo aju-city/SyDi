@@ -10,6 +10,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 
+
 public class CartPage extends javax.swing.JFrame {
 
     private static final java.util.logging.Logger logger =
@@ -32,8 +33,15 @@ public class CartPage extends javax.swing.JFrame {
 
     public CartPage(String username) {
         this.username = username;
+
+        String[] cols = {"ITEM_ID", "PRODUCT", "UNIT PRICE", "QTY", "TOTAL", ""};
+        cartModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+
         initComponents();
         buildUI();
+        loadCartItemsFromBackend();
     }
 
     public CartPage() { this("Guest"); }
@@ -68,7 +76,108 @@ public class CartPage extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
 
+    private String extract(String json, String key) {
+        String search = "\"" + key + "\"";
+        int start = json.indexOf(search);
+        if (start == -1) return "";
 
+        int colon = json.indexOf(":", start);
+        if (colon == -1) return "";
+
+        int valueStart = colon + 1;
+
+        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
+            valueStart++;
+        }
+
+        if (json.charAt(valueStart) == '"') {
+            int endQuote = json.indexOf("\"", valueStart + 1);
+            return json.substring(valueStart + 1, endQuote);
+        }
+
+        int end = valueStart;
+        while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end)=='.')) {
+            end++;
+        }
+
+        return json.substring(valueStart, end);
+    }
+
+
+    private void loadCartItemsFromBackend() {
+        try {
+            String token = CartManager.guestToken;
+            String urlStr = "http://localhost:8080/api/cart/get?guestToken=" + token;
+
+            // --- 1. HTTP GET request ---
+            java.net.URL url = new java.net.URL(urlStr);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            java.io.BufferedReader reader =
+                    new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) sb.append(line);
+            reader.close();
+
+            String json = sb.toString();
+            System.out.println("DEBUG cart JSON = " + json);
+
+            // --- 2. Clear table ---
+            cartModel.setRowCount(0);
+
+            // --- 3. Parse manually: find the items array ---
+            int start = json.indexOf("[");
+            int end   = json.lastIndexOf("]");
+            if (start == -1 || end == -1) return;
+
+            String itemsArray = json.substring(start + 1, end).trim();
+            if (itemsArray.isEmpty()) return;
+
+            // Split objects: "},{"
+            String[] objects = itemsArray.split("\\},\\{");
+
+            for (String obj : objects) {
+                String o = obj.replace("{", "").replace("}", "").trim();
+
+                String name     = extract(o, "name");
+                String priceStr = extract(o, "price");
+                String qtyStr   = extract(o, "qty");
+                String itemId = extract(o, "itemId");
+
+                double price = Double.parseDouble(priceStr);
+                int qty      = Integer.parseInt(qtyStr);
+
+                cartModel.addRow(new Object[]{
+                        itemId,     // hidden column
+                        name,
+                        String.format("£%.2f", price),
+                        qty,
+                        String.format("£%.2f", price * qty),
+                        "Remove"
+                });
+            }
+
+            updateTotals();
+            refreshCartUI();
+
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Unable to load cart items.\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void refreshCartUI() {
+        getContentPane().removeAll();
+        buildUI();
+        revalidate();
+        repaint();
+    }
 
     private void buildUI() {
         setTitle("IPOS-PU \u00b7 Cart");
@@ -218,20 +327,6 @@ public class CartPage extends javax.swing.JFrame {
         card.add(sectionLabel("CART ITEMS"));
         card.add(Box.createVerticalStrut(12));
 
-        String[] cols = {"PRODUCT", "UNIT PRICE", "QTY", "TOTAL", ""};
-        cartModel = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        for (CartManager.CartItem item : CartManager.getItems()) {
-            cartModel.addRow(new Object[]{
-                item.name + "  (" + item.category + ")",
-                String.format("\u00a3%.2f", item.unitPrice),
-                item.qty,
-                String.format("\u00a3%.2f", item.unitPrice * item.qty),
-                "Remove"
-            });
-        }
-
         JTable table = new JTable(cartModel);
         table.setBackground(PANEL);
         table.setForeground(new Color(255, 255, 255, 200));
@@ -322,11 +417,18 @@ public class CartPage extends javax.swing.JFrame {
         table.getColumnModel().getColumn(4).setPreferredWidth(80);
         table.getColumnModel().getColumn(4).setMaxWidth(90);
 
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.getColumnModel().getColumn(0).setWidth(0);
+
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
                 if (row < 0) return;
+
+                String itemId = cartModel.getValueAt(row, 0).toString();
+                String token = CartManager.guestToken;
 
                 if (col == 2) {
                     Rectangle cellRect = table.getCellRect(row, col, false);
@@ -335,92 +437,75 @@ public class CartPage extends javax.swing.JFrame {
                     boolean isPlus  = localX > cellRect.width * 0.66;
                     if (!isMinus && !isPlus) return;
 
-                    int qty = (Integer) cartModel.getValueAt(row, 2);
+                    int delta = isPlus ? 1 : -1;
 
-                    String rawProduct = cartModel.getValueAt(row, 0).toString();
-                    int sepIdx = rawProduct.lastIndexOf("  (");
-                    String prodName = sepIdx >= 0 ? rawProduct.substring(0, sepIdx) : rawProduct;
-
-                    if (isPlus) {
-                        // enforce stock limit — look up the cap stored on the CartItem
-                        int limit = Integer.MAX_VALUE;
-                        for (CartManager.CartItem ci : CartManager.getItems()) {
-                            if (ci.name.equals(prodName)) { limit = ci.stockLimit; break; }
-                        }
-                        if (qty >= limit) return; // already at cap, do nothing
-                        qty++;
-                    } else {
-                        qty--;
+                    try {
+                        sendQtyUpdateToBackend(token, itemId, delta);
+                        loadCartItemsFromBackend(); // refresh table from backend
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
+                }
 
-                    if (qty <= 0) {
-                        cartModel.removeRow(row);
-                        CartManager.removeItem(prodName);
-                    } else {
-                        cartModel.setValueAt(qty, row, 2);
-                        String priceStr = cartModel.getValueAt(row, 1).toString().replace("\u00a3", "");
-                        try {
-                            double unitPrice = Double.parseDouble(priceStr);
-                            cartModel.setValueAt(String.format("\u00a3%.2f", unitPrice * qty), row, 3);
-                        } catch (NumberFormatException ignored) {}
-                        CartManager.setQty(prodName, qty);
+                else if (col == 4) {
+                    try {
+                        sendRemoveToBackend(token, itemId);
+                        loadCartItemsFromBackend();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                     }
-                    updateTotals();
-                } else if (col == 4) {
-                    String rawProduct = cartModel.getValueAt(row, 0).toString();
-                    int sepIdx = rawProduct.lastIndexOf("  (");
-                    String prodName = sepIdx >= 0 ? rawProduct.substring(0, sepIdx) : rawProduct;
-                    cartModel.removeRow(row);
-                    CartManager.removeItem(prodName);
-                    updateTotals();
                 }
             }
         });
 
-        if (cartModel.getRowCount() == 0) {
-            JPanel empty = new JPanel(new GridBagLayout());
-            empty.setBackground(PANEL);
-            empty.setPreferredSize(new Dimension(0, 130));
-            empty.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
-            empty.setAlignmentX(LEFT_ALIGNMENT);
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 50), 1));
+        sp.getViewport().setBackground(PANEL);
+        sp.setAlignmentX(LEFT_ALIGNMENT);
+        sp.setPreferredSize(new Dimension(0, 210));
+        sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
+        card.add(sp);
 
-            JLabel icon = new JLabel("[ ]");
-            icon.setFont(new Font("Segoe UI", Font.BOLD, 22));
-            icon.setForeground(new Color(37, 99, 168, 80));
-
-            JLabel msg = new JLabel("Your cart is empty");
-            msg.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            msg.setForeground(new Color(255, 255, 255, 80));
-
-            JLabel hint = new JLabel("Go back to Home and click + ADD on a product");
-            hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            hint.setForeground(new Color(255, 255, 255, 45));
-
-            JPanel stack = new JPanel();
-            stack.setOpaque(false);
-            stack.setLayout(new BoxLayout(stack, BoxLayout.Y_AXIS));
-            icon.setAlignmentX(CENTER_ALIGNMENT);
-            msg.setAlignmentX(CENTER_ALIGNMENT);
-            hint.setAlignmentX(CENTER_ALIGNMENT);
-            stack.add(icon);
-            stack.add(Box.createVerticalStrut(6));
-            stack.add(msg);
-            stack.add(Box.createVerticalStrut(4));
-            stack.add(hint);
-
-            empty.add(stack);
-            card.add(empty);
-        } else {
-            JScrollPane sp = new JScrollPane(table);
-            sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 50), 1));
-            sp.getViewport().setBackground(PANEL);
-            sp.setAlignmentX(LEFT_ALIGNMENT);
-            sp.setPreferredSize(new Dimension(0, 210));
-            sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
-            card.add(sp);
-        }
         return card;
     }
+
+
+    private void sendQtyUpdateToBackend(String token, String itemId, int delta) throws Exception {
+        String json = "[{\"guestToken\":\"" + token + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}]";
+
+        java.net.URL url = new java.net.URL("http://localhost:8080/api/cart/add");
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        try (java.io.OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes());
+        }
+
+        if (conn.getResponseCode() >= 400) {
+            throw new Exception("Backend rejected update (stock limit or unavailable)");
+        }
+    }
+
+    private void sendRemoveToBackend(String token, String itemId) throws Exception {
+        String json = "[{\"guestToken\":\"" + token + "\",\"itemId\":\"" + itemId + "\"}]";
+
+        java.net.URL url = new java.net.URL("http://localhost:8080/api/cart/remove");
+        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        try (java.io.OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes());
+        }
+
+        if (conn.getResponseCode() >= 400) {
+            throw new Exception("Failed to remove item");
+        }
+    }
+
 
     private JPanel buildDeliverySection() {
         JPanel card = makeCard();
@@ -663,13 +748,18 @@ public class CartPage extends javax.swing.JFrame {
     }
 
     private double calcSubtotal() {
-        if (cartModel == null) return 0;
-        double sum = 0;
+        double sum = 0.0;
+        if (cartModel == null) return 0.0;
+
         for (int i = 0; i < cartModel.getRowCount(); i++) {
-            String s = cartModel.getValueAt(i, 3).toString().replace("\u00a3", "");
-            try { sum += Double.parseDouble(s); } catch (NumberFormatException ignored) {}
+            Object val = cartModel.getValueAt(i, 3); // TOTAL column
+            if (val == null) continue;
+            String totalStr = val.toString().replace("£", "").trim();
+            try {
+                sum += Double.parseDouble(totalStr);
+            } catch (NumberFormatException ignored) {}
         }
-        return Math.round(sum * 100.0) / 100.0;
+        return sum;
     }
 
 

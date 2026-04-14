@@ -6,6 +6,7 @@ package ipos_pu;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.IOException;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
@@ -464,39 +465,47 @@ public class HomePage extends javax.swing.JFrame {
         java.util.List<Object[]> rows = new java.util.ArrayList<>();
         stockQtyMap.clear();
         stockLimitMap.clear();
+
         try (java.sql.Connection con = DBConnection.getConnection();
              java.sql.Statement st = con.createStatement();
              java.sql.ResultSet rs = st.executeQuery(
-                 "SELECT name, description, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
+                     "SELECT item_id, name, description, price, quantity, stock_limit FROM ipos_ca.stock_items ORDER BY name")) {
+
             while (rs.next()) {
+                String itemId = rs.getString("item_id");
+                String name = rs.getString("name");
                 int qty = rs.getInt("quantity");
                 int lim = rs.getInt("stock_limit");
-                String name = rs.getString("name");
+
                 stockQtyMap.put(name, qty);
                 stockLimitMap.put(name, lim);
-                // qty=0 → no stock, qty<stock_limit → pharmacy is running low, else in stock
+
                 String status = qty == 0 ? "NO STOCK"
-                              : qty < lim ? "LOW STOCK"
-                              : "IN STOCK";
+                        : qty < lim ? "LOW STOCK"
+                        : "IN STOCK";
+
                 rows.add(new Object[]{
-                    name,
-                    rs.getString("description"),
-                    String.format("\u00a3%.2f", rs.getDouble("price")),
-                    status,
-                    "ADD"
+                        name,
+                        rs.getString("description"),
+                        String.format("£%.2f", rs.getDouble("price")),
+                        status,
+                        "ADD",
+                        itemId   // NEW hidden column
                 });
             }
+
         } catch (java.sql.SQLException ex) {
             JOptionPane.showMessageDialog(this,
-                "Could not load products: " + ex.getMessage(),
-                "Database Error", JOptionPane.ERROR_MESSAGE);
+                    "Could not load products: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
         }
+
         allProductData = rows.toArray(new Object[0][]);
     }
 
     private void buildProductTable() {
         // columns: name, description, price, stock status (colour coded), add button
-        String[] cols = {"NAME", "DESCRIPTION", "PRICE", "STOCK", ""};
+        String[] cols = {"NAME", "DESCRIPTION", "PRICE", "STOCK", "", "ITEM_ID"};
         loadProductsFromDB();
         productModel = new DefaultTableModel(allProductData, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -634,46 +643,83 @@ public class HomePage extends javax.swing.JFrame {
         table.getColumnModel().getColumn(3).setPreferredWidth(110);
         table.getColumnModel().getColumn(3).setMaxWidth(130);
 
+        // Hide the itemId column (index 5)
+        table.getColumnModel().getColumn(5).setMinWidth(0);
+        table.getColumnModel().getColumn(5).setMaxWidth(0);
+        table.getColumnModel().getColumn(5).setWidth(0);
+
         // clicking the add button (column 4) adds item to cart, enforces stock limit,
         // then refreshes stock status colours across the whole table
         table.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
+
+                // ADD button is column 4
                 if (col == 4 && row >= 0) {
+
                     Object stockVal = productModel.getValueAt(row, 3);
                     String stockStr = stockVal != null ? stockVal.toString() : "";
+
                     // block if no stock or customer already hit the per-order limit
                     if (!"NO STOCK".equals(stockStr) && !"LIMIT".equals(stockStr)) {
-                        String prodName  = productModel.getValueAt(row, 0).toString();
-                        String priceStr  = productModel.getValueAt(row, 2).toString()
-                                               .replace("\u00a3", "").trim();
-                        // extra safety check: cart qty must be under the stock_limit cap
+
+                        String prodName = productModel.getValueAt(row, 0).toString();
+                        String priceStr = productModel.getValueAt(row, 2).toString()
+                                .replace("\u00a3", "").trim();
+
+                        // enforce per-order stock limit
                         int limitQty = stockLimitMap.getOrDefault(prodName, Integer.MAX_VALUE);
-                        int cartQty  = 0;
+                        int cartQty = 0;
                         for (CartManager.CartItem it : CartManager.getItems()) {
-                            if (it.name.equals(prodName)) { cartQty = it.qty; break; }
+                            if (it.name.equals(prodName)) {
+                                cartQty = it.qty;
+                                break;
+                            }
                         }
-                        if (cartQty >= limitQty) return; // already at the per-order cap
+
+                        // If limit reached, silently ignore (NOT an error)
+                        if (cartQty >= limitQty) {
+                            return;
+                        }
+
                         try {
                             double unitPrice = Double.parseDouble(priceStr);
-                            // apply per-item discount from active campaign if this product has one
+
+                            // apply promo discount
                             double itemRate = PromoManager.getItemDiscountRate(activePromo, prodName);
                             if (itemRate < 1.0) {
                                 unitPrice = Math.round(unitPrice * itemRate * 100.0) / 100.0;
                             }
-                            // loyalty 10% off on every 10th order
+
+                            // loyalty discount
                             if (OrderManager.isLoyaltyOrder()) {
                                 unitPrice = Math.round(unitPrice * 0.9 * 100.0) / 100.0;
                             }
-                            CartManager.addItem(prodName, "", unitPrice, 1, limitQty);
-                        } catch (NumberFormatException ignored) {}
 
-                        // recompute stock status for every row so colours update live
+                            // NEW: get itemId from hidden column 5
+                            int modelRow = table.convertRowIndexToModel(row);
+                            String itemId = productModel.getValueAt(modelRow, 5).toString();
+
+                            // NEW: backend add-to-cart
+                            CartManager.addItem(itemId, 1);
+
+                        } catch (IOException ex) {
+                            // Only show popup for REAL backend failures
+                            JOptionPane.showMessageDialog(
+                                    HomePage.this,
+                                    "Failed to add item to cart.\nThe server could not process the request.",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
+                        }
+
+                        // refresh stock status colours
                         for (Object[] dataRow : allProductData) {
                             dataRow[3] = computeStockStatus(dataRow[0].toString());
                         }
-                        filterTable(); // repopulates the model with new statuses
+                        filterTable();
 
                         cartCount = CartManager.getTotalCount();
                         cartButton.repaint();
