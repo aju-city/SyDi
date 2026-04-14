@@ -3,12 +3,13 @@ package controller;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import dao.CartDAO;
-import dao.StockItemDAO;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public class AddToCartHandler implements HttpHandler {
+public class RemoveCartHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -18,7 +19,7 @@ public class AddToCartHandler implements HttpHandler {
         }
 
         try {
-            // Read full JSON body (Java 8 compatible)
+            // read body
             InputStream is = exchange.getRequestBody();
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -28,34 +29,15 @@ public class AddToCartHandler implements HttpHandler {
             }
             String body = result.toString("UTF-8");
 
-            // debug prints
-            System.out.println("DEBUG raw body = [" + body + "]");
-
-            // Extract fields manually (simple JSON)
             String guestToken = extract(body, "guestToken");
-            String itemId = extract(body, "itemId");
-            String qtyStr = extract(body, "qty");
+            String itemId     = extract(body, "itemId");
 
-            System.out.println("DEBUG extracted guestToken = [" + guestToken + "]");
-            System.out.println("DEBUG extracted itemId    = [" + itemId + "]");
-            System.out.println("DEBUG extracted qtyStr    = [" + qtyStr + "]");
-
-            int qty = Integer.parseInt(qtyStr);
-
-            // Validate stock item exists
-            if (!StockItemDAO.itemExists(itemId)) {
-                sendJson(exchange, 400, "{ \"error\": \"Invalid itemId\" }");
-                return;
-            }
-
-            // Add or update cart item
-            CartDAO.addOrUpdateCartItem(guestToken, itemId, qty);
+            CartDAO.removeItem(guestToken, itemId);
 
             sendJson(exchange, 200, "{ \"status\": \"OK\" }");
-
         } catch (Exception e) {
             e.printStackTrace();
-            sendJson(exchange, 500, "{ \"error\": \"Failed to add item\" }");
+            sendJson(exchange, 500, "{ \"error\": \"Failed to remove item\" }");
         }
     }
 
@@ -68,30 +50,17 @@ public class AddToCartHandler implements HttpHandler {
         if (colon == -1) return null;
 
         int valueStart = colon + 1;
+        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) valueStart++;
 
-        // Skip whitespace
-        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
-            valueStart++;
-        }
-
-        // Quoted string
         if (json.charAt(valueStart) == '"') {
             int endQuote = json.indexOf("\"", valueStart + 1);
             return json.substring(valueStart + 1, endQuote);
         }
 
-        // Number (supports negative and decimals)
         int end = valueStart;
-        while (end < json.length() &&
-                (Character.isDigit(json.charAt(end)) ||
-                        json.charAt(end) == '-' ||
-                        json.charAt(end) == '.')) {
-            end++;
-        }
-
+        while (end < json.length() && Character.isLetterOrDigit(json.charAt(end))) end++;
         return json.substring(valueStart, end);
     }
-
 
     private void sendJson(HttpExchange ex, int status, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);

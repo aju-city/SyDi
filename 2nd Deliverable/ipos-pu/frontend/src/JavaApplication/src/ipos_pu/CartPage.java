@@ -28,7 +28,7 @@ public class CartPage extends javax.swing.JFrame {
     private DefaultTableModel cartModel;
     private JLabel subtotalLbl, totalLbl;
     private JPanel paymentCard, successCard;
-
+    private JTable table;
 
 
     public CartPage(String username) {
@@ -41,6 +41,8 @@ public class CartPage extends javax.swing.JFrame {
 
         initComponents();
         buildUI();
+        attachCartListeners();
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         loadCartItemsFromBackend();
     }
 
@@ -86,22 +88,29 @@ public class CartPage extends javax.swing.JFrame {
 
         int valueStart = colon + 1;
 
+        // Skip whitespace
         while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
             valueStart++;
         }
 
+        // Quoted string
         if (json.charAt(valueStart) == '"') {
             int endQuote = json.indexOf("\"", valueStart + 1);
             return json.substring(valueStart + 1, endQuote);
         }
 
+        // Number (supports negative and decimals)
         int end = valueStart;
-        while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end)=='.')) {
+        while (end < json.length() &&
+                (Character.isDigit(json.charAt(end)) ||
+                        json.charAt(end) == '-' ||
+                        json.charAt(end) == '.')) {
             end++;
         }
 
         return json.substring(valueStart, end);
     }
+
 
 
     private void loadCartItemsFromBackend() {
@@ -160,8 +169,6 @@ public class CartPage extends javax.swing.JFrame {
             }
 
             updateTotals();
-            refreshCartUI();
-
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -182,7 +189,6 @@ public class CartPage extends javax.swing.JFrame {
     private void buildUI() {
         setTitle("IPOS-PU \u00b7 Cart");
         setSize(1280, 760);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1000, 620));
         setLocationRelativeTo(null);
         getContentPane().setBackground(BG);
@@ -327,7 +333,8 @@ public class CartPage extends javax.swing.JFrame {
         card.add(sectionLabel("CART ITEMS"));
         card.add(Box.createVerticalStrut(12));
 
-        JTable table = new JTable(cartModel);
+        table = new JTable(cartModel);
+
         table.setBackground(PANEL);
         table.setForeground(new Color(255, 255, 255, 200));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -360,7 +367,7 @@ public class CartPage extends javax.swing.JFrame {
         };
         for (int i = 0; i < 4; i++) table.getColumnModel().getColumn(i).setCellRenderer(cr);
 
-        table.getColumnModel().getColumn(2).setCellRenderer((t, v, sel, foc, r, c) -> {
+        table.getColumnModel().getColumn(3).setCellRenderer((t, v, sel, foc, r, c) -> {
             int qty = v instanceof Integer ? (Integer) v : 0;
             Color rowBg = r % 2 == 0 ? PANEL : new Color(0x0a1018);
             JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 8));
@@ -396,11 +403,11 @@ public class CartPage extends javax.swing.JFrame {
             p.add(plus);
             return p;
         });
-        table.getColumnModel().getColumn(2).setPreferredWidth(110);
-        table.getColumnModel().getColumn(2).setMaxWidth(130);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setMaxWidth(130);
 
 
-        table.getColumnModel().getColumn(4).setCellRenderer((t, v, sel, foc, r, c) -> {
+        table.getColumnModel().getColumn(5).setCellRenderer((t, v, sel, foc, r, c) -> {
             JButton btn = new JButton("Remove");
             btn.setFont(new Font("Segoe UI", Font.PLAIN, 10));
             btn.setForeground(new Color(0xf87171));
@@ -414,49 +421,12 @@ public class CartPage extends javax.swing.JFrame {
             wrap.add(btn);
             return wrap;
         });
-        table.getColumnModel().getColumn(4).setPreferredWidth(80);
-        table.getColumnModel().getColumn(4).setMaxWidth(90);
+        table.getColumnModel().getColumn(5).setPreferredWidth(80);
+        table.getColumnModel().getColumn(5).setMaxWidth(90);
 
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-
-        table.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                int col = table.columnAtPoint(e.getPoint());
-                int row = table.rowAtPoint(e.getPoint());
-                if (row < 0) return;
-
-                String itemId = cartModel.getValueAt(row, 0).toString();
-                String token = CartManager.guestToken;
-
-                if (col == 2) {
-                    Rectangle cellRect = table.getCellRect(row, col, false);
-                    int localX = e.getX() - cellRect.x;
-                    boolean isMinus = localX < cellRect.width * 0.34;
-                    boolean isPlus  = localX > cellRect.width * 0.66;
-                    if (!isMinus && !isPlus) return;
-
-                    int delta = isPlus ? 1 : -1;
-
-                    try {
-                        sendQtyUpdateToBackend(token, itemId, delta);
-                        loadCartItemsFromBackend(); // refresh table from backend
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-
-                else if (col == 4) {
-                    try {
-                        sendRemoveToBackend(token, itemId);
-                        loadCartItemsFromBackend();
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            }
-        });
 
         JScrollPane sp = new JScrollPane(table);
         sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 50), 1));
@@ -752,7 +722,7 @@ public class CartPage extends javax.swing.JFrame {
         if (cartModel == null) return 0.0;
 
         for (int i = 0; i < cartModel.getRowCount(); i++) {
-            Object val = cartModel.getValueAt(i, 3); // TOTAL column
+            Object val = cartModel.getValueAt(i, 4); // TOTAL column
             if (val == null) continue;
             String totalStr = val.toString().replace("£", "").trim();
             try {
@@ -947,6 +917,59 @@ public class CartPage extends javax.swing.JFrame {
         av.setMaximumSize(new Dimension(36, 36));
         av.setMinimumSize(new Dimension(36, 36));
         return av;
+    }
+
+    private void attachCartListeners() {
+        if (table == null) return;
+
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                int col = table.columnAtPoint(e.getPoint());
+                int row = table.rowAtPoint(e.getPoint());
+                if (row < 0) return;
+
+                String itemId = cartModel.getValueAt(row, 0).toString();
+                String token = CartManager.guestToken;
+
+                if (col == 3) {
+                    Rectangle cellRect = table.getCellRect(row, col, false);
+                    int localX = e.getX() - cellRect.x;
+                    boolean isMinus = localX < cellRect.width * 0.34;
+                    boolean isPlus  = localX > cellRect.width * 0.66;
+                    if (!isMinus && !isPlus) return;
+
+                    int delta = isPlus ? 1 : -1;
+
+                    try {
+                        sendQtyUpdateToBackend(token, itemId, delta);
+                        loadCartItemsFromBackend();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                else if (col == 5) {
+                    try {
+                        sendRemoveToBackend(token, itemId);
+                        loadCartItemsFromBackend();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+    }
+
+    private JTable findCartTable() {
+        // Your cart table is always inside the first JScrollPane in the content
+        for (Component c : getContentPane().getComponents()) {
+            if (c instanceof JScrollPane sp) {
+                if (sp.getViewport().getView() instanceof JTable t) {
+                    return t;
+                }
+            }
+        }
+        return null;
     }
 
     private String getInitials(String name) {

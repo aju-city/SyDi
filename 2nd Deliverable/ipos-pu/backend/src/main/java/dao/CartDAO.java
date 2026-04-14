@@ -78,6 +78,18 @@ public class CartDAO {
             // 4. Compute new quantity
             int newQty = (existingQty == null ? qty : existingQty + qty);
 
+            // If item exists and newQty <= 0 → remove it
+            if (existingQty != null && newQty <= 0) {
+                String delete = "DELETE FROM ipos_pu.ShoppingCartItems WHERE cart_id = ? AND product_id = ?";
+                try (PreparedStatement stmt = conn.prepareStatement(delete)) {
+                    stmt.setInt(1, cartId);
+                    stmt.setString(2, itemId);
+                    stmt.executeUpdate();
+                }
+                return;
+            }
+
+
             // 5. Enforce per-order limit
             if (newQty > limit) {
                 throw new Exception("Limit reached: max " + limit + " per order.");
@@ -90,13 +102,19 @@ public class CartDAO {
 
             // 7. Insert or update
             if (existingQty == null) {
+                // qty is a delta. If it's negative or zero, ignore.
+                if (qty <= 0) {
+                    return; // nothing to remove
+                }
+
                 try (PreparedStatement stmt = conn.prepareStatement(insert)) {
                     stmt.setInt(1, cartId);
                     stmt.setString(2, itemId);
-                    stmt.setInt(3, qty);
+                    stmt.setInt(3, qty); // qty is positive here
                     stmt.executeUpdate();
                 }
-            } else {
+            }
+            else {
                 try (PreparedStatement stmt = conn.prepareStatement(update)) {
                     stmt.setInt(1, newQty);
                     stmt.setInt(2, cartId);
@@ -135,4 +153,26 @@ public class CartDAO {
 
         return list;
     }
+
+    public static void removeItem(String guestToken, String itemId) throws Exception {
+        String findCartId = "SELECT cart_id FROM ipos_pu.ShoppingCart WHERE guest_token = ?";
+        String delete = "DELETE FROM ipos_pu.ShoppingCartItems WHERE cart_id = ? AND product_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            int cartId;
+            try (PreparedStatement stmt = conn.prepareStatement(findCartId)) {
+                stmt.setString(1, guestToken);
+                ResultSet rs = stmt.executeQuery();
+                if (!rs.next()) return;
+                cartId = rs.getInt("cart_id");
+            }
+
+            try (PreparedStatement stmt = conn.prepareStatement(delete)) {
+                stmt.setInt(1, cartId);
+                stmt.setString(2, itemId);
+                stmt.executeUpdate();
+            }
+        }
+    }
+
 }

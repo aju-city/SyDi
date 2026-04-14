@@ -27,6 +27,8 @@ public class SimpleHttpServer {
 
         server.createContext("/api/cart/get", new GetCartHandler());
 
+        server.createContext("/api/cart/remove", new RemoveCartHandler());
+
         server.setExecutor(null); // default executor
         server.start();
 
