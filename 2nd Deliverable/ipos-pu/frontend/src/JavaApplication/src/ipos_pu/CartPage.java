@@ -6,6 +6,8 @@ package ipos_pu;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -32,6 +34,11 @@ public class CartPage extends javax.swing.JFrame {
     private JLabel subtotalLbl, totalLbl;
     private JPanel paymentCard, successCard;
     private JTable table;
+    private double backendSubtotal = 0;
+    private double backendFinalTotal = 0;
+    private double backendDiscountAmount = 0;
+    private boolean backendDiscountApplied = false;
+
 
 
     public CartPage(String username) {
@@ -102,6 +109,14 @@ public class CartPage extends javax.swing.JFrame {
             return json.substring(valueStart + 1, endQuote);
         }
 
+        // Boolean
+        if (json.startsWith("true", valueStart)) {
+            return "true";
+        }
+        if (json.startsWith("false", valueStart)) {
+            return "false";
+        }
+
         // Number (supports negative and decimals)
         int end = valueStart;
         while (end < json.length() &&
@@ -115,23 +130,29 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
-
     private void loadCartItemsFromBackend() {
         boolean isGuest = "Guest".equals(username);
         String identifier = isGuest ? CartManager.guestToken : username;
+
         try {
-            String urlStr = isGuest
-                    ? "http://localhost:8080/api/cart/get?guestToken=" + identifier
-                    : "http://localhost:8080/api/cart/get?memberEmail=" + identifier;
+            URL url = new URL("http://localhost:8080/api/cart/get");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
 
+            // JSON body
+            String jsonOut = isGuest
+                    ? "{\"guestToken\":\"" + identifier + "\"}"
+                    : "{\"memberEmail\":\"" + identifier + "\"}";
 
-            // --- 1. HTTP GET request ---
-            java.net.URL url = new java.net.URL(urlStr);
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(jsonOut.getBytes());
+            }
 
-            java.io.BufferedReader reader =
-                    new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+            // --- Read response ---
+            BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(conn.getInputStream()));
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) sb.append(line);
@@ -140,42 +161,48 @@ public class CartPage extends javax.swing.JFrame {
             String json = sb.toString();
             System.out.println("DEBUG cart JSON = " + json);
 
-            // --- 2. Clear table ---
+            // --- Clear table ---
             cartModel.setRowCount(0);
 
-            // --- 3. Parse manually: find the items array ---
+            // --- Parse items array ---
             int start = json.indexOf("[");
             int end   = json.lastIndexOf("]");
-            if (start == -1 || end == -1) return;
+            if (start != -1 && end != -1) {
+                String itemsArray = json.substring(start + 1, end).trim();
+                if (!itemsArray.isEmpty()) {
+                    String[] objects = itemsArray.split("\\},\\{");
 
-            String itemsArray = json.substring(start + 1, end).trim();
-            if (itemsArray.isEmpty()) return;
+                    for (String obj : objects) {
+                        String o = obj.replace("{", "").replace("}", "").trim();
 
-            // Split objects: "},{"
-            String[] objects = itemsArray.split("\\},\\{");
+                        String name     = extract(o, "name");
+                        String priceStr = extract(o, "unitPrice");  // backend uses unitPrice
+                        String qtyStr   = extract(o, "qty");
+                        String itemId   = extract(o, "itemId");
 
-            for (String obj : objects) {
-                String o = obj.replace("{", "").replace("}", "").trim();
+                        double price = Double.parseDouble(priceStr);
+                        int qty      = Integer.parseInt(qtyStr);
 
-                String name     = extract(o, "name");
-                String priceStr = extract(o, "price");
-                String qtyStr   = extract(o, "qty");
-                String itemId = extract(o, "itemId");
-
-                double price = Double.parseDouble(priceStr);
-                int qty      = Integer.parseInt(qtyStr);
-
-                cartModel.addRow(new Object[]{
-                        itemId,     // hidden column
-                        name,
-                        String.format("£%.2f", price),
-                        qty,
-                        String.format("£%.2f", price * qty),
-                        "Remove"
-                });
+                        cartModel.addRow(new Object[]{
+                                itemId,
+                                name,
+                                String.format("£%.2f", price),
+                                qty,
+                                String.format("£%.2f", price * qty),
+                                "Remove"
+                        });
+                    }
+                }
             }
 
-            updateTotals();
+            // --- NEW: read discount fields ---
+            backendSubtotal        = Double.parseDouble(extract(json, "subtotal"));
+            backendDiscountApplied = Boolean.parseBoolean(extract(json, "discountApplied"));
+            backendDiscountAmount  = Double.parseDouble(extract(json, "discountAmount"));
+            backendFinalTotal      = Double.parseDouble(extract(json, "finalTotal"));
+
+            // --- Update UI ---
+            updateTotalsFromBackend();
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -186,11 +213,20 @@ public class CartPage extends javax.swing.JFrame {
         }
     }
 
-    private void refreshCartUI() {
-        getContentPane().removeAll();
-        buildUI();
-        revalidate();
-        repaint();
+
+    private void updateTotalsFromBackend() {
+        if (subtotalLbl != null) {
+            subtotalLbl.setText(String.format("£%.2f", backendSubtotal));
+        }
+
+        if (backendDiscountApplied) {
+            totalLbl.setText(
+                    String.format("Total   £%.2f   (10%% discount applied: -£%.2f)",
+                            backendFinalTotal, backendDiscountAmount)
+            );
+        } else {
+            totalLbl.setText(String.format("Total   £%.2f", backendFinalTotal));
+        }
     }
 
     private void buildUI() {
@@ -595,82 +631,127 @@ public class CartPage extends javax.swing.JFrame {
             String cvv   = new String(cvvField.getPassword()).trim();
 
             if (cartModel.getRowCount() == 0) {
-                errLbl.setText("Your cart is empty."); return;
+                errLbl.setText("Your cart is empty.");
+                return;
             }
+
+            // guest variable ALREADY EXISTS above — use it here
             if (guest) {
                 String em   = emailField.getText().trim();
                 String addr = addressField.getText().trim();
                 if (em.isEmpty() || em.equals("Email address") || !em.contains("@")) {
-                    errLbl.setText("Please enter a valid email address."); return;
+                    errLbl.setText("Please enter a valid email address.");
+                    return;
                 }
                 if (addr.isEmpty() || addr.equals("Delivery address")) {
-                    errLbl.setText("Please enter your delivery address."); return;
+                    errLbl.setText("Please enter your delivery address.");
+                    return;
                 }
             }
+
             if (name.isEmpty() || name.equals("Name on card")) {
-                errLbl.setText("Please enter the name on your card."); return;
+                errLbl.setText("Please enter the name on your card.");
+                return;
             }
             if (cnum.length() != 16 || !cnum.matches("\\d+")) {
-                errLbl.setText("Please enter a valid 16-digit card number."); return;
+                errLbl.setText("Please enter a valid 16-digit card number.");
+                return;
             }
             if (!exp.matches("\\d{2}\\s*/\\s*\\d{2}")) {
-                errLbl.setText("Please enter expiry as MM / YY."); return;
+                errLbl.setText("Please enter expiry as MM / YY.");
+                return;
             }
             if (cvv.length() != 3 || !cvv.matches("\\d+")) {
-                errLbl.setText("Please enter a valid 3-digit CVV."); return;
+                errLbl.setText("Please enter a valid 3-digit CVV.");
+                return;
             }
-
-            OrderManager.placeOrder(CartManager.getItems(), calcSubtotal());
-            // if a promo was active record how many items were purchased under it before we clear the cart
-            String activeP = PromoManager.getUserActivePromo();
-            if (activeP != null) {
-                int totalQty = 0;
-                for (CartManager.CartItem it : CartManager.getItems()) totalQty += it.qty;
-                PromoManager.recordPurchase(activeP, totalQty);
-                PromoManager.setUserActivePromo(null);
-            }
-
 
             try {
-                boolean isGuest = guest; // you already have this variable
-                String identifier = isGuest ? CartManager.guestToken : CartManager.memberEmail;
+                // --- 1. Validate stock with backend ---
+                String identifier = guest ? CartManager.guestToken : CartManager.memberEmail;
 
-                String json = isGuest
+                String jsonOut = guest
                         ? "{\"guestToken\":\"" + identifier + "\"}"
                         : "{\"memberEmail\":\"" + identifier + "\"}";
 
-                URL url = new URL("http://localhost:8080/api/cart/clear");
+                URL url = new URL("http://localhost:8080/api/order/validateStock");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
-                conn.getOutputStream().write(json.getBytes());
+                conn.getOutputStream().write(jsonOut.getBytes());
                 conn.getOutputStream().close();
 
-                if (conn.getResponseCode() != 200) {
-                    System.out.println("Failed to clear backend cart");
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+
+                String response = sb.toString();
+                System.out.println("VALIDATE STOCK RESPONSE = " + response);
+
+                System.out.println("EXTRACT OK = [" + extract(response, "ok") + "]");
+
+                boolean ok = extract(response, "ok").trim().equals("true");
+
+                if (!ok) {
+                    String err = extract(response, "error");
+                    if (err == null || err.isEmpty()) err = "Stock validation failed.";
+                    errLbl.setText(err);
+                    return; // STOP checkout
                 }
+
+                // --- 2. Stock is OK → proceed with your existing order logic ---
+                OrderManager.placeOrder(CartManager.getItems(), calcSubtotal());
+
+                String activeP = PromoManager.getUserActivePromo();
+                if (activeP != null) {
+                    int totalQty = 0;
+                    for (CartManager.CartItem it : CartManager.getItems()) totalQty += it.qty;
+                    PromoManager.recordPurchase(activeP, totalQty);
+                    PromoManager.setUserActivePromo(null);
+                }
+
+                try {
+                    String json = guest
+                            ? "{\"guestToken\":\"" + identifier + "\"}"
+                            : "{\"memberEmail\":\"" + identifier + "\"}";
+
+                    URL clearUrl = new URL("http://localhost:8080/api/cart/clear");
+                    HttpURLConnection clearConn = (HttpURLConnection) clearUrl.openConnection();
+                    clearConn.setRequestMethod("POST");
+                    clearConn.setRequestProperty("Content-Type", "application/json");
+                    clearConn.setDoOutput(true);
+
+                    clearConn.getOutputStream().write(json.getBytes());
+                    clearConn.getOutputStream().close();
+                } catch (Exception ex2) {
+                    ex2.printStackTrace();
+                }
+
+                CartManager.clear();
+
+                if (guest) {
+                    try {
+                        CartManager.guestToken = CartManager.createGuestCartOnBackend();
+                    } catch (Exception ex3) {
+                        ex3.printStackTrace();
+                        JOptionPane.showMessageDialog(this, "Could not create a new guest cart.");
+                    }
+                }
+
+                paymentCard.setVisible(false);
+                successCard.setVisible(true);
+                successCard.revalidate();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
+                errLbl.setText("Checkout failed. Please try again.");
             }
-
-
-            CartManager.clear();
-
-            if (guest) {
-                try {
-                    CartManager.guestToken = CartManager.createGuestCartOnBackend();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Could not create a new guest cart.");
-                }
-            }
-
-            paymentCard.setVisible(false);
-            successCard.setVisible(true);
-            successCard.revalidate();
         });
+
         card.add(placeBtn);
 
         JLabel secure = new JLabel("Card details stored securely per brief requirements");

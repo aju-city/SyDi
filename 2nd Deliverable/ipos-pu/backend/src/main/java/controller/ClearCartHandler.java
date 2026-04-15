@@ -40,12 +40,13 @@ public class ClearCartHandler implements HttpHandler {
     private String extract(String json, String key) {
         String search = "\"" + key + "\"";
         int start = json.indexOf(search);
-        if (start == -1) return null;
+        if (start == -1) return "";
 
         int colon = json.indexOf(":", start);
-        if (colon == -1) return null;
+        if (colon == -1) return "";
 
         int valueStart = colon + 1;
+
         while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
             valueStart++;
         }
@@ -55,8 +56,20 @@ public class ClearCartHandler implements HttpHandler {
             return json.substring(valueStart + 1, endQuote);
         }
 
-        return null;
+        if (json.startsWith("true", valueStart)) return "true";
+        if (json.startsWith("false", valueStart)) return "false";
+
+        int end = valueStart;
+        while (end < json.length() &&
+                (Character.isDigit(json.charAt(end)) ||
+                        json.charAt(end) == '-' ||
+                        json.charAt(end) == '.')) {
+            end++;
+        }
+
+        return json.substring(valueStart, end);
     }
+
 
     private void sendJson(HttpExchange ex, int status, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
