@@ -3,7 +3,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JDialog.java to edit this template
  */
 package ipos_pu;
-import com.google.gson.Gson;
 
 import java.awt.*;
 
@@ -517,7 +516,25 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         req.directors     = directors;
 
         // Convert to JSON
-        String json = new Gson().toJson(req);
+        // build JSON manually — no Gson needed
+        StringBuilder jsonSb = new StringBuilder();
+        jsonSb.append("{");
+        jsonSb.append("\"companyName\":\"").append(req.companyName).append("\",");
+        jsonSb.append("\"regNumber\":\"").append(req.regNumber).append("\",");
+        jsonSb.append("\"businessType\":\"").append(req.businessType).append("\",");
+        jsonSb.append("\"address\":\"").append(req.address).append("\",");
+        jsonSb.append("\"email\":\"").append(req.email).append("\",");
+        jsonSb.append("\"phone\":\"").append(req.phone).append("\",");
+        jsonSb.append("\"directors\":[");
+        if (req.directors != null) {
+            for (int di = 0; di < req.directors.size(); di++) {
+                ipos_pu.Director d = req.directors.get(di);
+                if (di > 0) jsonSb.append(",");
+                jsonSb.append("{\"name\":\"").append(d.getFullName()).append("\",\"phone\":\"").append(d.getPhone()).append("\"}");
+            }
+        }
+        jsonSb.append("]}");
+        String json = jsonSb.toString();
 
         try {
             // Send to backend

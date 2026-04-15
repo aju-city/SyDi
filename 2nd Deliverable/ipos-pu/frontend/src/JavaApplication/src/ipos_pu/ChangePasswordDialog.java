@@ -165,13 +165,16 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
             }
             String response = result.toString("UTF-8");
 
-            com.google.gson.JsonObject obj =
-                    new com.google.gson.JsonParser().parse(response).getAsJsonObject();
-
-            boolean success = obj.get("success").getAsBoolean();
+            boolean success = response.contains("\"success\":true") || response.contains("\"success\": true");
 
             if (!success) {
-                String message = obj.get("message").getAsString();
+                int mi = response.indexOf("\"message\"");
+                String message = "Password change failed.";
+                if (mi >= 0) {
+                    int qs = response.indexOf('"', response.indexOf(':', mi)) + 1;
+                    int qe = response.indexOf('"', qs);
+                    if (qs > 0 && qe > qs) message = response.substring(qs, qe);
+                }
                 showError(message);
                 return;
             }

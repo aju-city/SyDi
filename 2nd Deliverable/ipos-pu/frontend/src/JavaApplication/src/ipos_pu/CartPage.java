@@ -56,7 +56,7 @@ public class CartPage extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -117,73 +117,19 @@ public class CartPage extends javax.swing.JFrame {
 
 
     private void loadCartItemsFromBackend() {
-        boolean isGuest = "Guest".equals(username);
-        String identifier = isGuest ? CartManager.guestToken : username;
-        try {
-            String urlStr = isGuest
-                    ? "http://localhost:8080/api/cart/get?guestToken=" + identifier
-                    : "http://localhost:8080/api/cart/get?memberEmail=" + identifier;
-
-
-            // --- 1. HTTP GET request ---
-            java.net.URL url = new java.net.URL(urlStr);
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            java.io.BufferedReader reader =
-                    new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
-            reader.close();
-
-            String json = sb.toString();
-            System.out.println("DEBUG cart JSON = " + json);
-
-            // --- 2. Clear table ---
-            cartModel.setRowCount(0);
-
-            // --- 3. Parse manually: find the items array ---
-            int start = json.indexOf("[");
-            int end   = json.lastIndexOf("]");
-            if (start == -1 || end == -1) return;
-
-            String itemsArray = json.substring(start + 1, end).trim();
-            if (itemsArray.isEmpty()) return;
-
-            // Split objects: "},{"
-            String[] objects = itemsArray.split("\\},\\{");
-
-            for (String obj : objects) {
-                String o = obj.replace("{", "").replace("}", "").trim();
-
-                String name     = extract(o, "name");
-                String priceStr = extract(o, "price");
-                String qtyStr   = extract(o, "qty");
-                String itemId = extract(o, "itemId");
-
-                double price = Double.parseDouble(priceStr);
-                int qty      = Integer.parseInt(qtyStr);
-
-                cartModel.addRow(new Object[]{
-                        itemId,     // hidden column
-                        name,
-                        String.format("£%.2f", price),
-                        qty,
-                        String.format("£%.2f", price * qty),
-                        "Remove"
-                });
-            }
-
-            updateTotals();
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                    "Unable to load cart items.\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+        // load from local in-memory CartManager — no backend call needed
+        cartModel.setRowCount(0);
+        for (CartManager.CartItem item : CartManager.getItems()) {
+            cartModel.addRow(new Object[]{
+                item.name,                                      // col 0 = ITEM_ID (use name as id)
+                item.name,                                      // col 1 = PRODUCT
+                String.format("\u00a3%.2f", item.unitPrice),  // col 2 = UNIT PRICE
+                item.qty,                                       // col 3 = QTY
+                String.format("\u00a3%.2f", item.unitPrice * item.qty), // col 4 = TOTAL
+                "Remove"                                        // col 5
+            });
         }
+        updateTotals();
     }
 
     private void refreshCartUI() {
@@ -659,12 +605,8 @@ public class CartPage extends javax.swing.JFrame {
             CartManager.clear();
 
             if (guest) {
-                try {
-                    CartManager.guestToken = CartManager.createGuestCartOnBackend();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Could not create a new guest cart.");
-                }
+                // regenerate local guest token — no backend call needed
+                CartManager.guestToken = "GT-" + (10000 + (int)(Math.random() * 90000));
             }
 
             paymentCard.setVisible(false);
@@ -893,144 +835,144 @@ public class CartPage extends javax.swing.JFrame {
         Border normal  = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
             BorderFactory.createEmptyBorder(6, 10, 6, 10));
-        Border focused = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(NEON_LT, 1),
-            BorderFactory.createEmptyBorder(6, 10, 6, 10));
+        Border focused = javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 200), 1),
+            javax.swing.BorderFactory.createEmptyBorder(6, 10, 6, 10));
         f.setBorder(normal);
         f.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override public void focusGained(java.awt.event.FocusEvent e) {
+                if (f.getText().equals(placeholder)) {
+                    f.setText("");
+                    f.setForeground(java.awt.Color.WHITE);
+                }
                 f.setBorder(focused);
-                if (f.getText().equals(placeholder)) { f.setText(""); f.setForeground(Color.WHITE); }
             }
             @Override public void focusLost(java.awt.event.FocusEvent e) {
+                if (f.getText().isEmpty()) {
+                    f.setText(placeholder);
+                    f.setForeground(new java.awt.Color(255, 255, 255, 80));
+                }
                 f.setBorder(normal);
-                if (f.getText().isEmpty()) { f.setText(placeholder); f.setForeground(new Color(255,255,255,80)); }
             }
         });
         return f;
-    }
-
-
-    private JPasswordField styledPasswordField() {
-        JPasswordField f = new JPasswordField();
-        f.setBackground(new Color(0x0b1220));
-        f.setForeground(Color.WHITE);
-        f.setCaretColor(NEON_LT);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
-        f.setAlignmentX(LEFT_ALIGNMENT);
-        Border normal  = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 10, 6, 10));
-        Border focused = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(NEON_LT, 1),
-            BorderFactory.createEmptyBorder(6, 10, 6, 10));
-        f.setBorder(normal);
-        f.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override public void focusGained(java.awt.event.FocusEvent e) { f.setBorder(focused); }
-            @Override public void focusLost(java.awt.event.FocusEvent e)   { f.setBorder(normal);  }
-        });
-        return f;
-    }
-
-    private void styleNavBtn(JButton btn) {
-        btn.setBackground(new Color(0x0b1220));
-        btn.setForeground(new Color(200, 200, 200));
-        btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 14, 6, 14)));
-        btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setOpaque(true);
-    }
-
-    private JPanel makeAvatarPanel() {
-        String initials = getInitials(username);
-        JPanel av = new JPanel() {
-            @Override protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(NEON);
-                g2.fillOval(0, 0, getWidth()-1, getHeight()-1);
-                g2.setColor(Color.WHITE);
-                g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-                FontMetrics fm = g2.getFontMetrics();
-                g2.drawString(initials,
-                    (getWidth()  - fm.stringWidth(initials)) / 2,
-                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
-                g2.dispose();
-            }
-        };
-        av.setOpaque(false);
-        av.setPreferredSize(new Dimension(36, 36));
-        av.setMaximumSize(new Dimension(36, 36));
-        av.setMinimumSize(new Dimension(36, 36));
-        return av;
     }
 
     private void attachCartListeners() {
-        if (table == null) return;
-
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
                 if (row < 0) return;
-
-                String itemId = cartModel.getValueAt(row, 0).toString();
-
-                // guest vs member (computed once)
-                boolean isGuest = "Guest".equals(username);
+                String itemId  = cartModel.getValueAt(row, 0).toString();
+                String prodName = cartModel.getValueAt(row, 1).toString();
+                boolean isGuest  = "Guest".equals(username);
                 String identifier = isGuest ? CartManager.guestToken : username;
 
-                if (col == 3) {
-                    Rectangle cellRect = table.getCellRect(row, col, false);
-                    int localX = e.getX() - cellRect.x;
-                    boolean isMinus = localX < cellRect.width * 0.34;
-                    boolean isPlus  = localX > cellRect.width * 0.66;
-                    if (!isMinus && !isPlus) return;
+                if (col == 5) {
+                    CartManager.removeItem(prodName);
+                    cartModel.removeRow(row);
+                    updateTotals();
+                    try { sendRemoveToBackend(identifier, itemId, isGuest); } catch (Exception ex) { /* best effort */ }
+                } else if (col == 3) {
+                    java.awt.Rectangle rect = table.getCellRect(row, col, false);
+                    int relX  = e.getX() - rect.x;
+                    int third = rect.width / 3;
+                    int qty = cartModel.getValueAt(row, 3) instanceof Integer
+                        ? (Integer) cartModel.getValueAt(row, 3) : 0;
 
-                    int delta = isPlus ? 1 : -1;
-
-                    try {
-                        sendQtyUpdateToBackend(identifier, itemId, delta, isGuest);
-                        loadCartItemsFromBackend();
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    if (relX < third) {
+                        // minus button
+                        if (qty <= 1) {
+                            CartManager.removeItem(prodName);
+                            cartModel.removeRow(row);
+                            try { sendRemoveToBackend(identifier, itemId, isGuest); } catch (Exception ex) { /* best effort */ }
+                        } else {
+                            qty--;
+                            CartManager.setQty(prodName, qty);
+                            double price = parsePrice(cartModel.getValueAt(row, 2).toString());
+                            cartModel.setValueAt(qty, row, 3);
+                            cartModel.setValueAt(String.format("\u00a3%.2f", price * qty), row, 4);
+                            try { sendQtyUpdateToBackend(identifier, itemId, -1, isGuest); } catch (Exception ex) { /* best effort */ }
+                        }
+                    } else if (relX > rect.width - third) {
+                        // plus button
+                        int limit = Integer.MAX_VALUE;
+                        for (CartManager.CartItem it : CartManager.getItems()) {
+                            if (it.name.equals(prodName)) { limit = it.stockLimit; break; }
+                        }
+                        if (qty >= limit) return;
+                        qty++;
+                        CartManager.setQty(prodName, qty);
+                        double price = parsePrice(cartModel.getValueAt(row, 2).toString());
+                        cartModel.setValueAt(qty, row, 3);
+                        cartModel.setValueAt(String.format("\u00a3%.2f", price * qty), row, 4);
+                        try { sendQtyUpdateToBackend(identifier, itemId, 1, isGuest); } catch (Exception ex) { /* best effort */ }
                     }
-                }
-
-                else if (col == 5) {
-                    try {
-                        sendRemoveToBackend(identifier, itemId, isGuest);
-                        loadCartItemsFromBackend();
-                    } catch (Exception ex) {
-                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
+                    updateTotals();
                 }
             }
         });
     }
 
-
-    private JTable findCartTable() {
-        // Your cart table is always inside the first JScrollPane in the content
-        for (Component c : getContentPane().getComponents()) {
-            if (c instanceof JScrollPane sp) {
-                if (sp.getViewport().getView() instanceof JTable t) {
-                    return t;
-                }
-            }
-        }
-        return null;
+    private double parsePrice(String s) {
+        try { return Double.parseDouble(s.replace("\u00a3", "").trim()); }
+        catch (NumberFormatException e) { return 0.0; }
+    }
+    private void styleNavBtn(javax.swing.JButton btn) {
+        btn.setBackground(new java.awt.Color(0x0b1220));
+        btn.setForeground(new java.awt.Color(255, 255, 255, 160));
+        btn.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
+        btn.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+            javax.swing.BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+        btn.setFocusPainted(false);
+        btn.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        btn.setOpaque(true);
     }
 
-    private String getInitials(String name) {
-        if (name == null || name.trim().isEmpty()) return "G";
+    private javax.swing.JPanel makeAvatarPanel() {
+        String name = username != null ? username : "G";
+        String initials;
         String[] parts = name.trim().split("\\s+");
         if (parts.length >= 2)
-            return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-        return name.substring(0, Math.min(2, name.length())).toUpperCase();
+            initials = ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+        else
+            initials = name.substring(0, Math.min(2, name.length())).toUpperCase();
+        final String ini = initials;
+        javax.swing.JPanel av = new javax.swing.JPanel() {
+            @Override protected void paintComponent(java.awt.Graphics g) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(NEON);
+                g2.fillOval(0, 0, getWidth() - 1, getHeight() - 1);
+                g2.setColor(java.awt.Color.WHITE);
+                g2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
+                java.awt.FontMetrics fm = g2.getFontMetrics();
+                g2.drawString(ini, (getWidth() - fm.stringWidth(ini)) / 2,
+                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                g2.dispose();
+            }
+        };
+        av.setOpaque(false);
+        av.setPreferredSize(new java.awt.Dimension(34, 34));
+        av.setMinimumSize(new java.awt.Dimension(34, 34));
+        av.setMaximumSize(new java.awt.Dimension(34, 34));
+        return av;
     }
+
+    private javax.swing.JPasswordField styledPasswordField() {
+        javax.swing.JPasswordField f = new javax.swing.JPasswordField();
+        f.setBackground(new java.awt.Color(0x0b1220));
+        f.setForeground(new java.awt.Color(255, 255, 255, 160));
+        f.setCaretColor(NEON_LT);
+        f.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
+        f.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 38));
+        f.setAlignmentX(LEFT_ALIGNMENT);
+        f.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+            javax.swing.BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+        return f;
+    }
+
 }

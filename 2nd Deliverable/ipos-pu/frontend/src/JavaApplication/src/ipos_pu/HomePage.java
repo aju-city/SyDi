@@ -554,8 +554,24 @@ public class HomePage extends javax.swing.JFrame {
                 return this;
             }
         };
-        // apply to name, description, package type, unit, units/pack, price, stock (cols 0-6)
-        for (int i = 0; i < 7; i++) {
+        // name column (0) — styled as a clickable link
+        table.getColumnModel().getColumn(0).setCellRenderer((t, v, sel, foc, r, c) -> {
+            String stock = t.getModel().getValueAt(r, 6) != null
+                ? t.getModel().getValueAt(r, 6).toString() : "";
+            boolean noStock = "NO STOCK".equals(stock) || "LIMIT".equals(stock);
+            Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
+            if (sel) bg = new Color(37, 99, 168, 50);
+            JLabel lbl = new JLabel("<html><u>" + (v != null ? v.toString() : "") + "</u></html>");
+            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            lbl.setForeground(noStock ? new Color(255, 255, 255, 80) : NEON_LT);
+            lbl.setBackground(bg);
+            lbl.setOpaque(true);
+            lbl.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
+            lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            return lbl;
+        });
+        // apply to description, package type, unit, units/pack, stock (cols 1-6 except 5)
+        for (int i = 1; i < 7; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
@@ -645,10 +661,30 @@ public class HomePage extends javax.swing.JFrame {
 
         // clicking the add button (column 7) adds item to cart, enforces stock limit,
         // then refreshes stock status colours across the whole table
+        table.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override public void mouseMoved(java.awt.event.MouseEvent e) {
+                int col = table.columnAtPoint(e.getPoint());
+                table.setCursor(col == 0
+                    ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                    : Cursor.getDefaultCursor());
+            }
+        });
+
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
+                if (col == 0 && row >= 0) {
+                    String name        = safeCell(productModel.getValueAt(row, 0));
+                    String description = safeCell(productModel.getValueAt(row, 1));
+                    String packageType = safeCell(productModel.getValueAt(row, 2));
+                    String unit        = safeCell(productModel.getValueAt(row, 3));
+                    String unitsPack   = safeCell(productModel.getValueAt(row, 4));
+                    String price       = safeCell(productModel.getValueAt(row, 5));
+                    String stock       = safeCell(productModel.getValueAt(row, 6));
+                    new ProductViewDialog(HomePage.this, name, description,
+                            packageType, unit, unitsPack, price, stock).setVisible(true);
+                }
                 if (col == 7 && row >= 0) {
                     Object stockVal = productModel.getValueAt(row, 6);
                     String stockStr = stockVal != null ? stockVal.toString() : "";
@@ -737,6 +773,10 @@ public class HomePage extends javax.swing.JFrame {
 
         cataloguePanel.add(sp);
         cataloguePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+    }
+
+    private static String safeCell(Object val) {
+        return val != null ? val.toString() : "—";
     }
 
     private JPanel buildCustomerServices() {
@@ -898,17 +938,18 @@ public class HomePage extends javax.swing.JFrame {
             }
         };
         av.setOpaque(false);
-        av.setPreferredSize(new Dimension(36, 36));
-        av.setMaximumSize(new Dimension(36, 36));
-        av.setMinimumSize(new Dimension(36, 36));
+        av.setOpaque(false);
+        av.setPreferredSize(new java.awt.Dimension(34, 34));
+        av.setMinimumSize(new java.awt.Dimension(34, 34));
+        av.setMaximumSize(new java.awt.Dimension(34, 34));
         return av;
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // <editor-fold defaultstate="collapsed" desc="Variables declaration">//GEN-BEGIN:variables
     private javax.swing.JLabel brandLabel;
-    private javax.swing.JButton cartButton;
     private javax.swing.JPanel cataloguePanel;
     private javax.swing.JPanel contentPanel;
+    private javax.swing.JButton cartButton;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.JPanel filterRow;
@@ -918,5 +959,5 @@ public class HomePage extends javax.swing.JFrame {
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel sectionPromoLabel;
     private javax.swing.JButton signOutButton;
-    // End of variables declaration//GEN-END:variables
+    // </editor-fold>//GEN-END:variables
 }

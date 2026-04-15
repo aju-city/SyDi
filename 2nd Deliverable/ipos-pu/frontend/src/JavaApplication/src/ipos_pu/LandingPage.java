@@ -98,7 +98,7 @@ private void styleComponents() {
     eyebrow.setForeground(NEON);
     eyebrow.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-    titleLabel.setText("SyDi Online");
+    titleLabel = new JLabel("SyDi Online");
     titleLabel.setFont(new Font("Trebuchet MS", Font.BOLD, 110));
     titleLabel.setForeground(WHITE);
     titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -133,19 +133,11 @@ private void styleComponents() {
     JButton guestButton = new JButton("CONTINUE AS GUEST");
     styleButton(guestButton, false);
     guestButton.addActionListener(e -> {
-        try {
-            String token = CartManager.createGuestCartOnBackend();
-            CartManager.guestToken = token;
-
-            dispose();
-            new HomePage("Guest").setVisible(true);
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Unable to start guest session.\n" + ex.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+        // generate a local guest token — no backend call needed to start browsing
+        CartManager.guestToken = "GT-" + (10000 + (int)(Math.random() * 90000));
+        CartManager.memberEmail = null;
+        dispose();
+        new HomePage("Guest").setVisible(true);
     });
 
     contentPanel.add(Box.createVerticalGlue());
@@ -342,6 +334,8 @@ private void styleComponents() {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
             }
@@ -349,16 +343,14 @@ private void styleComponents() {
             logger.log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-
-        /* Create and display the form */
         java.awt.EventQueue.invokeLater(() -> new LandingPage().setVisible(true));
     }
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // <editor-fold defaultstate="collapsed" desc="Variables declaration">//GEN-BEGIN:variables
     private javax.swing.JPanel contentPanel;
     private javax.swing.JButton loginButton;
     private javax.swing.JPanel mainPanel;
     private javax.swing.JButton registerButton;
     private javax.swing.JLabel titleLabel;
-    // End of variables declaration//GEN-END:variables
+    // </editor-fold>//GEN-END:variables
 }

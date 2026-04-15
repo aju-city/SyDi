@@ -17,7 +17,7 @@ public class DBConnection {
     // connection details for the local ipos_ca database
     private static final String URL  = "jdbc:mysql://localhost:3306/ipos_ca";
     private static final String USER = "root";
-    private static final String PASS = "root";
+    private static final String PASS = "Nurse=27";
 
     // returns a fresh connection each time, caller is responsible for closing it
     public static Connection getConnection() throws SQLException {

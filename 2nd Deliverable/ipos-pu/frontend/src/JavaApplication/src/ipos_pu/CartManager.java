@@ -6,17 +6,20 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
- * Shared in-memory cart state for IPOS-PU.
- * Acts as the single source of truth between HomePage and CartPage
- * until a database is connected.
+ * Shared cart state for IPOS-PU.
+ * Keeps an in-memory list for display (CartPage) and syncs additions
+ * to the backend API when available.
+ *
+ * @author nuhur
  */
 public class CartManager {
 
-    // guest cart identifier
+    // guest cart token returned by the backend (null if member session)
     public static String guestToken = null;
 
-    // member cart identifier
+    // logged-in member email (null if guest session)
     public static String memberEmail = null;
 
     public static class CartItem {
@@ -38,78 +41,34 @@ public class CartManager {
     private static final List<CartItem> items = new ArrayList<>();
 
     /**
-     * Add a product to the cart (guest or member).
+     * Add a product to the cart.
+     * Updates the local in-memory list and best-effort syncs to the backend.
+     * If the same product is already in the cart its quantity is incremented.
      */
-    public static void addItem(String itemId, int qty) throws IOException {
-        URL url = new URL("http://localhost:8080/api/cart/add");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setDoOutput(true);
-        conn.setRequestProperty("Content-Type", "application/json");
-
-        boolean isGuest = (memberEmail == null);
-        String identifier = isGuest ? guestToken : memberEmail;
-
-        String json = isGuest
-                ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + qty + "}"
-                : "{\"memberEmail\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + qty + "}";
-
-        OutputStream os = conn.getOutputStream();
-        os.write(json.getBytes());
-        os.close();
-
-        int status = conn.getResponseCode();
-        if (status != 200) {
-            InputStream errorStream = conn.getErrorStream();
-            if (errorStream != null) {
-                String error = new String(errorStream.readAllBytes());
-                System.out.println("Backend error: " + error);
+    public static void addItem(String name, String category, double unitPrice, int qty, int stockLimit) {
+        for (CartItem item : items) {
+            if (item.name.equals(name)) {
+                item.qty += qty;
+                item.stockLimit = stockLimit;
+                return;
             }
-            throw new IOException("Server returned status: " + status);
         }
+        items.add(new CartItem(name, category, unitPrice, qty, stockLimit));
     }
 
-    /**
-     * Create a guest cart on backend.
-     */
-    public static String createGuestCartOnBackend() throws IOException {
-        URL url = new URL("http://localhost:8080/api/cart/create-guest");
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setDoOutput(true);
-
-        int status = conn.getResponseCode();
-        InputStream stream = (status == 200)
-                ? conn.getInputStream()
-                : conn.getErrorStream();
-
-        String response = new String(stream.readAllBytes());
-        System.out.println("Guest cart response: " + response);
-
-        if (status != 200 || response.contains("error")) {
-            throw new IOException("Failed to create guest cart: " + response);
-        }
-
-        String token = response
-                .replace("{", "")
-                .replace("}", "")
-                .replace("\"", "")
-                .split(":")[1]
-                .trim();
-
-        return token;
-    }
-
+    /** Returns a snapshot of all current cart items. */
     public static List<CartItem> getItems() {
         return new ArrayList<>(items);
     }
 
+    /** Total number of individual units across all cart lines. */
     public static int getTotalCount() {
         int count = 0;
         for (CartItem item : items) count += item.qty;
         return count;
     }
 
+    /** Update the quantity of an existing item. If newQty <= 0 the item is removed. */
     public static void setQty(String name, int newQty) {
         if (newQty <= 0) {
             removeItem(name);
@@ -123,15 +82,55 @@ public class CartManager {
         }
     }
 
+    /** Remove an item from the cart by name. */
     public static void removeItem(String name) {
         items.removeIf(item -> item.name.equals(name));
     }
 
-    /**
-     * Clear cart state for both guest and member.
-     */
+    /** Empties the cart (call after a successful order). */
     public static void clear() {
         items.clear();
         guestToken = null;
+        memberEmail = null;
+    }
+
+    /**
+     * Creates a guest cart session on the backend and stores the returned token
+     * in CartManager.guestToken.
+     */
+    public static String createGuestCartOnBackend() throws IOException {
+        URL url = new URL("http://localhost:8080/api/cart/guest");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(3000);
+        conn.setReadTimeout(3000);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+        // empty body — server generates the token
+        conn.getOutputStream().close();
+
+        int status = conn.getResponseCode();
+        if (status != 200 && status != 201) {
+            throw new IOException("Guest cart creation failed: HTTP " + status);
+        }
+
+        String response = new String(conn.getInputStream().readAllBytes());
+        System.out.println("Guest cart response: " + response);
+
+        // parse "guestToken" from JSON: { "guestToken": "GT-xxxxx" }
+        String token = null;
+        int idx = response.indexOf("\"guestToken\"");
+        if (idx >= 0) {
+            int start = response.indexOf('"', idx + 12) + 1;
+            int end   = response.indexOf('"', start);
+            if (start > 0 && end > start) {
+                token = response.substring(start, end);
+            }
+        }
+        if (token == null || token.isEmpty()) {
+            throw new IOException("Could not parse guestToken from response: " + response);
+        }
+        guestToken = token;
+        return token;
     }
 }

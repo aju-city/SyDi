@@ -1,38 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="2b4b768a-b527-4e55-80d5-4eaa53ea7442" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../.idea/SyDi.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../.idea/libraries/mysql_connector_j_9_6_0.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/TestCommercialApplicantInsert.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/service/IPUService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/service/PUServiceFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/service/PUServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/TestCommercialApplicantInsert.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/TestConnection.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/TestInsert.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/config.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/dao/CommercialApplicantDAO.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/dao/CompanyDirectorDAO.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/dao/NonCommercialMemberDAO.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/db/DatabaseConnection.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/model/CommercialApplicant.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/model/CompanyDirector.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/model/NonCommercialMember.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/service/IPUService.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/service/PUServiceFactory.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../out/production/SyDi/service/PUServiceImpl.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/TestInsert.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/TestInsert.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CommercialApplicantDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CommercialApplicantDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CompanyDirectorDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/CompanyDirectorDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/NonCommercialMemberDAO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/java/dao/NonCommercialMemberDAO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/src/main/resources/config.example.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/src/main/resources/config.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/ProductViewDialog.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/SyDi.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/SyDi.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/2nd Deliverable.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/2nd Deliverable.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/target/classes/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/src/main/resources/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/target/classes/src/main/resources/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/backend/target/classes/target/classes/target/classes/target/classes/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/AdminPage.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/AdminPage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/CartManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/CartManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/CartPage.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/CartPage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/ChangePasswordDialog.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/ChangePasswordDialog.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/CommercialRegistrationDialog.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/CommercialRegistrationDialog.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/DBConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/DBConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/HomePage.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/HomePage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/LandingPage.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/LandingPage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/LoginDialog.java" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/frontend/src/JavaApplication/src/ipos_pu/LoginDialog.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/AdminPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartManager$CartItem.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartManager$CartItem.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CartPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/ChangePasswordDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/ChangePasswordDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$4$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$4$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/DBConnection.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/DBConnection.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/HomePage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LandingPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LandingPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LandingPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LandingPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LoginDialog$4$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LoginDialog$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LoginDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/ipos-pu/out/production/ipos-pu/ipos_pu/LoginDialog.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,9 +100,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 4
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="3BJqvpSbo9JteRBAltMFnSnvfw5" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -52,23 +110,60 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Application.CommercialRegistrationDialog.executor": "Run",
+    "Application.JavaApplication.executor": "Run",
+    "Application.Main.executor": "Run",
+    "Application.TestConnection.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "UI_DESIGNER_EDITOR_MODE.PaletteManager.SHOW": "false",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/becto/gitRepos/SyDi/2nd Deliverable",
+    "last_opened_file_path": "C:/Users/nuhur/Documents/GitHub/SyDi/2nd Deliverable",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2850575",
+    "settings.editor.selected.configurable": "preferences.general",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RunManager">
+    <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="server.Main" />
+      <module name="ipos-pu-backend" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="server.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.Main" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
-        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.30387.90" />
+        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.26775.15" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.26775.15" />
       </set>
     </attachedChunks>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="2b4b768a-b527-4e55-80d5-4eaa53ea7442" name="Changes" comment="" />
@@ -77,10 +172,15 @@
       <option name="presentableId" value="Default" />
       <updated>1774217753354</updated>
       <workItem from="1774217754533" duration="8000" />
+      <workItem from="1776265540835" duration="5738000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>

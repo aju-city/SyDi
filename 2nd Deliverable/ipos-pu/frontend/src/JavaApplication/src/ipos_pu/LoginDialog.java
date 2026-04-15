@@ -284,9 +284,20 @@ public class LoginDialog extends javax.swing.JDialog {
             return;
         }
 
+        // admin — bypass backend entirely
+        if (username.equals("admin")) {
+            java.awt.Window owner = getOwner();
+            this.dispose();
+            if (owner != null) owner.dispose();
+            new AdminPage().setVisible(true);
+            return;
+        }
+
         try {
             URL url = new URL("http://localhost:8080/api/login");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
@@ -294,31 +305,32 @@ public class LoginDialog extends javax.swing.JDialog {
             String json = "{ \"emailOrUsername\": \"" + username + "\", \"password\": \"" + password + "\" }";
             conn.getOutputStream().write(json.getBytes("UTF-8"));
 
-            // Read response (Java 8 compatible)
-            InputStream is = conn.getInputStream();
-            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            int status = conn.getResponseCode();
+
+            // read body — use errorStream on 4xx/5xx
+            java.io.InputStream is = status >= 400 ? conn.getErrorStream() : conn.getInputStream();
+            java.io.ByteArrayOutputStream result = new java.io.ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int length;
-            while ((length = is.read(buffer)) != -1) {
+            while (is != null && (length = is.read(buffer)) != -1) {
                 result.write(buffer, 0, length);
             }
             String response = result.toString("UTF-8");
 
-            // Parse JSON
-            com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(response).getAsJsonObject();
-
-            boolean success = obj.get("success").getAsBoolean();
-
-            if (!success) {
-                String message = obj.get("message").getAsString();
-                showError(message);
+            if (status == 401 || status == 403) {
+                showError("Invalid username or password.");
+                return;
+            }
+            if (status >= 400) {
+                showError("Login failed (server error " + status + ").");
                 return;
             }
 
-            String role = obj.get("role").getAsString();
+            // simple JSON field extraction without Gson
+            String role = extractField(response, "role");
+            String mustChangePwd = extractField(response, "mustChangePassword");
 
-            if (role.equals("admin")) {
-                // Admin login
+            if ("admin".equals(role)) {
                 java.awt.Window owner = getOwner();
                 this.dispose();
                 if (owner != null) owner.dispose();
@@ -326,22 +338,16 @@ public class LoginDialog extends javax.swing.JDialog {
                 return;
             }
 
-            if (role.equals("member")) {
-                boolean mustChange = obj.get("mustChangePassword").getAsBoolean();
-
-                if (mustChange) {
-                    // Redirect to Change Password dialog
+            if ("member".equals(role) || !role.isEmpty()) {
+                if ("true".equals(mustChangePwd)) {
                     ChangePasswordDialog cpd = new ChangePasswordDialog(
                             (java.awt.Frame) getOwner(), true, username);
                     this.dispose();
                     cpd.setVisible(true);
                     return;
                 }
-
                 CartManager.memberEmail = username;
                 CartManager.guestToken = null;
-
-                // Normal member login → go to HomePage
                 java.awt.Window owner = getOwner();
                 this.dispose();
                 if (owner != null) owner.dispose();
@@ -349,6 +355,10 @@ public class LoginDialog extends javax.swing.JDialog {
                 return;
             }
 
+            showError("Unrecognised server response.");
+
+        } catch (java.net.SocketTimeoutException e) {
+            showError("Server not responding. Please try again.");
         } catch (Exception e) {
             e.printStackTrace();
             showError("Could not connect to server.");
@@ -356,52 +366,33 @@ public class LoginDialog extends javax.swing.JDialog {
     }//GEN-LAST:event_signInButtonActionPerformed
 
     private void passwordFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordFieldActionPerformed
-        // TODO add your handling code here:
+        signInButtonActionPerformed(evt);
     }//GEN-LAST:event_passwordFieldActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the dialog */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                LoginDialog dialog = new LoginDialog(new javax.swing.JFrame(), true);
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-            }
-        });
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel loginText;
+    private javax.swing.JTextField usernameField;
+    private javax.swing.JLabel usernameText;
     private javax.swing.JPasswordField passwordField;
     private javax.swing.JLabel passwordText;
     private javax.swing.JButton signInButton;
-    private javax.swing.JTextField usernameField;
-    private javax.swing.JLabel usernameText;
+    private javax.swing.JLabel loginText;
     // End of variables declaration//GEN-END:variables
+    private String extractField(String json, String key) {
+        String search = "\"" + key + "\"";
+        int idx = json.indexOf(search);
+        if (idx < 0) return "";
+        int colon = json.indexOf(":", idx);
+        if (colon < 0) return "";
+        int vs = colon + 1;
+        while (vs < json.length() && Character.isWhitespace(json.charAt(vs))) vs++;
+        if (vs >= json.length()) return "";
+        if (json.charAt(vs) == '"') {
+            int end = json.indexOf('"', vs + 1);
+            return end > vs ? json.substring(vs + 1, end) : "";
+        }
+        int end = vs;
+        while (end < json.length() && json.charAt(end) != ',' && json.charAt(end) != '}') end++;
+        return json.substring(vs, end).trim();
+    }
+
 }

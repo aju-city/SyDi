@@ -46,7 +46,13 @@ public class AdminPage extends javax.swing.JFrame {
         buildUI();
     }
 
-    private void buildUI() {
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+        private void buildUI() {
         setTitle("IPOS-PU \u2014 Admin Panel");
         setSize(1280, 760);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -1207,36 +1213,36 @@ public class AdminPage extends javax.swing.JFrame {
             BorderFactory.createEmptyBorder(6,18,6,18)));
         ok.setFocusPainted(false);
         ok.setOpaque(true);
-        ok.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        ok.setAlignmentX(Component.RIGHT_ALIGNMENT);
-        ok.addActionListener(e -> dlg.dispose());
+        ok.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        ok.addActionListener(ev -> dlg.dispose());
 
-        root.add(msg);
-        root.add(Box.createVerticalStrut(16));
-        root.add(ok);
+        javax.swing.JPanel inner = new javax.swing.JPanel();
+        inner.setLayout(new javax.swing.BoxLayout(inner, javax.swing.BoxLayout.Y_AXIS));
+        inner.setBackground(new java.awt.Color(0x0a1018));
+        inner.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+            javax.swing.BorderFactory.createEmptyBorder(20, 24, 20, 24)));
+        msg.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        inner.add(msg);
+        inner.add(javax.swing.Box.createVerticalStrut(16));
+        javax.swing.JPanel btnRow = new javax.swing.JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT, 0, 0));
+        btnRow.setOpaque(false);
+        btnRow.add(ok);
+        inner.add(btnRow);
 
-        dlg.setContentPane(root);
+        dlg.setContentPane(inner);
+        dlg.pack();
+        dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);
     }
-
-    private void styleReportField(JTextField fld) {
-        fld.setBackground(new Color(0x0b1220));
-        fld.setForeground(new Color(255, 255, 255, 200));
-        fld.setCaretColor(Color.WHITE);
-        fld.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        fld.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(5, 8, 5, 8)
-        ));
+    private void styleReportField(javax.swing.JTextField f) {
+        f.setBackground(new java.awt.Color(0x0b1220));
+        f.setForeground(new java.awt.Color(255, 255, 255, 160));
+        f.setCaretColor(NEON_LT);
+        f.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
+        f.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+            javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)));
     }
 
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    // End of variables declaration//GEN-END:variables
 }
