@@ -58,6 +58,25 @@ public class AddToCartHandler implements HttpHandler {
                 CartDAO.addOrUpdateCartItem(guestToken, itemId, qty);
             }
 
+            // Route to correct DAO method
+            if (memberEmail != null && !memberEmail.isEmpty()) {
+                CartDAO.addOrUpdateCartItemForMember(memberEmail, itemId, qty);
+            } else {
+                CartDAO.addOrUpdateCartItem(guestToken, itemId, qty);
+            }
+
+            // Log ADD_TO_CART
+            ActivityLogger.log(
+                    memberEmail,
+                    guestToken,
+                    itemId,
+                    null,
+                    null,
+                    "ADD_TO_CART"
+            );
+
+            sendJson(exchange, 200, "{ \"status\": \"OK\" }");
+
             sendJson(exchange, 200, "{ \"status\": \"OK\" }");
 
         } catch (Exception e) {

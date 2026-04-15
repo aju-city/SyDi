@@ -15,7 +15,7 @@ import javax.swing.table.*;
  * @author nuhur
  */
 public class HomePage extends javax.swing.JFrame {
-    
+
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(HomePage.class.getName());
 
     private String username;
@@ -38,6 +38,8 @@ public class HomePage extends javax.swing.JFrame {
         this.username = username;
         initComponents();
         styleComponents();
+        // Log catalogue view once when page loads
+        ActivityLoggerClient.log("CATALOGUE_VIEW", null, null, null);
     }
 
     /**
@@ -120,7 +122,7 @@ public class HomePage extends javax.swing.JFrame {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -145,7 +147,7 @@ public class HomePage extends javax.swing.JFrame {
     private static final Color NEON_LT = new Color(0x7eb8f7);
 
     private void styleComponents() {
-        setTitle("IPOS-PU \u00b7 Home");
+        setTitle("IPOS-PU · Home");
         setSize(1280, 760);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1000, 620));
@@ -154,19 +156,19 @@ public class HomePage extends javax.swing.JFrame {
 
         navPanel.remove(mainScroll);
         getContentPane().add(mainScroll, BorderLayout.CENTER);
-        
+
         navPanel.setBackground(PANEL);
         navPanel.setPreferredSize(new Dimension(0, 58));
         navPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
-            BorderFactory.createEmptyBorder(0, 20, 0, 20)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
+                BorderFactory.createEmptyBorder(0, 20, 0, 20)
         ));
 
 
         navPanel.removeAll();
         brandLabel.setText("<html><span style='font-family:Trebuchet MS;font-size:16px;"
-            + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
-            + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
+                + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
+                + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
         navPanel.add(brandLabel);
         navPanel.add(filler1);
 
@@ -177,7 +179,7 @@ public class HomePage extends javax.swing.JFrame {
         navPanel.add(Box.createHorizontalStrut(16));
 
         Box.Filler leftGlue = new Box.Filler(
-            new Dimension(0, 0), new Dimension(0, 0), new Dimension(Short.MAX_VALUE, 0));
+                new Dimension(0, 0), new Dimension(0, 0), new Dimension(Short.MAX_VALUE, 0));
         navPanel.add(leftGlue);
 
         searchField.setText("");
@@ -188,20 +190,20 @@ public class HomePage extends javax.swing.JFrame {
         searchField.setMaximumSize(new Dimension(380, 34));
         searchField.setPreferredSize(new Dimension(380, 34));
         searchField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
-            BorderFactory.createEmptyBorder(6, 12, 6, 12)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)
         ));
         searchField.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override public void focusGained(java.awt.event.FocusEvent e) {
                 searchField.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(NEON_LT, 1),
-                    BorderFactory.createEmptyBorder(6, 12, 6, 12)
+                        BorderFactory.createLineBorder(NEON_LT, 1),
+                        BorderFactory.createEmptyBorder(6, 12, 6, 12)
                 ));
             }
             @Override public void focusLost(java.awt.event.FocusEvent e) {
                 searchField.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
-                    BorderFactory.createEmptyBorder(6, 12, 6, 12)
+                        BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
+                        BorderFactory.createEmptyBorder(6, 12, 6, 12)
                 ));
             }
         });
@@ -229,7 +231,7 @@ public class HomePage extends javax.swing.JFrame {
                 String text = "Cart";
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(text, (w - fm.stringWidth(text)) / 2,
-                    (h + fm.getAscent() - fm.getDescent()) / 2);
+                        (h + fm.getAscent() - fm.getDescent()) / 2);
 
                 if (cartCount > 0) {
                     String badge = String.valueOf(cartCount);
@@ -241,7 +243,7 @@ public class HomePage extends javax.swing.JFrame {
                     g2.fillOval(bx, by, bw, 14);
                     g2.setColor(Color.WHITE);
                     g2.drawString(badge, bx + (bw - bfm.stringWidth(badge)) / 2,
-                        by + bfm.getAscent() - 1);
+                            by + bfm.getAscent() - 1);
                 }
                 g2.dispose();
             }
@@ -317,7 +319,7 @@ public class HomePage extends javax.swing.JFrame {
                 int contH  = contentPanel.getPreferredSize().height;
                 if (viewH > contH) {
                     contentPanel.setPreferredSize(
-                        new Dimension(contentPanel.getPreferredSize().width, viewH));
+                            new Dimension(contentPanel.getPreferredSize().width, viewH));
                     contentPanel.revalidate();
                 }
             }
@@ -325,7 +327,7 @@ public class HomePage extends javax.swing.JFrame {
 
 
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
-            .put(javax.swing.KeyStroke.getKeyStroke('/'), "focusSearch");
+                .put(javax.swing.KeyStroke.getKeyStroke('/'), "focusSearch");
         getRootPane().getActionMap().put("focusSearch", new javax.swing.AbstractAction() {
             @Override public void actionPerformed(java.awt.event.ActionEvent e) {
                 searchField.requestFocusInWindow();
@@ -339,8 +341,8 @@ public class HomePage extends javax.swing.JFrame {
         btn.setForeground(new Color(255, 255, 255, 160));
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 14, 6, 14)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
         ));
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -381,16 +383,16 @@ public class HomePage extends javax.swing.JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 GradientPaint gp = new GradientPaint(0, 0, new Color(0x0d1b33),
-                    getWidth(), getHeight(), new Color(0x080e1a));
+                        getWidth(), getHeight(), new Color(0x080e1a));
                 g2.setPaint(gp);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 12, 12));
                 g2.setColor(new Color(37, 99, 168, 76));
                 g2.setStroke(new BasicStroke(1f));
                 g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth()-1f, getHeight()-1f, 12, 12));
                 RadialGradientPaint rg = new RadialGradientPaint(
-                    new Point(getWidth(), 0), 90,
-                    new float[]{0f, 1f},
-                    new Color[]{new Color(37, 99, 168, 50), new Color(0, 0, 0, 0)}
+                        new Point(getWidth(), 0), 90,
+                        new float[]{0f, 1f},
+                        new Color[]{new Color(37, 99, 168, 50), new Color(0, 0, 0, 0)}
                 );
                 g2.setPaint(rg);
                 g2.fillRect(0, 0, getWidth(), getHeight());
@@ -418,7 +420,7 @@ public class HomePage extends javax.swing.JFrame {
         if (camp.startDate != null || camp.endDate != null) {
             String s = camp.startDate != null ? camp.startDate.format(PromoManager.DATE_FMT) : "Now";
             String e = camp.endDate   != null ? camp.endDate.format(PromoManager.DATE_FMT)   : "Ongoing";
-            dateText = s + " \u2014 " + e;
+            dateText = s + " — " + e;
         }
         JLabel dateLbl = new JLabel(dateText);
         dateLbl.setFont(new Font("Segoe UI", Font.PLAIN, 10));
@@ -467,7 +469,7 @@ public class HomePage extends javax.swing.JFrame {
         try (java.sql.Connection con = DBConnection.getConnection();
              java.sql.Statement st = con.createStatement();
              java.sql.ResultSet rs = st.executeQuery(
-                 "SELECT name, description, package_type, unit, units_per_pack, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
+                     "SELECT item_id, name, description, package_type, unit, units_per_pack, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
             while (rs.next()) {
                 int qty = rs.getInt("quantity");
                 int lim = rs.getInt("stock_limit");
@@ -476,30 +478,31 @@ public class HomePage extends javax.swing.JFrame {
                 stockLimitMap.put(name, lim);
                 // qty=0 → no stock, qty<stock_limit → pharmacy is running low, else in stock
                 String status = qty == 0 ? "NO STOCK"
-                              : qty < lim ? "LOW STOCK"
-                              : "IN STOCK";
+                        : qty < lim ? "LOW STOCK"
+                        : "IN STOCK";
                 rows.add(new Object[]{
-                    name,
-                    rs.getString("description"),
-                    rs.getString("package_type"),
-                    rs.getString("unit"),
-                    rs.getInt("units_per_pack"),
-                    String.format("\u00a3%.2f", rs.getDouble("price")),
-                    status,
-                    "ADD"
+                        rs.getString("item_id"),
+                        name,
+                        rs.getString("description"),
+                        rs.getString("package_type"),
+                        rs.getString("unit"),
+                        rs.getInt("units_per_pack"),
+                        String.format("£%.2f", rs.getDouble("price")),
+                        status,
+                        "ADD"
                 });
             }
         } catch (java.sql.SQLException ex) {
             JOptionPane.showMessageDialog(this,
-                "Could not load products: " + ex.getMessage(),
-                "Database Error", JOptionPane.ERROR_MESSAGE);
+                    "Could not load products: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
         }
         allProductData = rows.toArray(new Object[0][]);
     }
 
     private void buildProductTable() {
         // columns: name, description, package type, unit, units/pack, price, stock status (colour coded), add button
-        String[] cols = {"NAME", "DESCRIPTION", "PACKAGE TYPE", "UNIT", "UNITS/PACK", "PRICE", "STOCK", ""};
+        String[] cols = {"ITEM_ID", "NAME", "DESCRIPTION", "PACKAGE TYPE", "UNIT", "UNITS/PACK", "PRICE", "STOCK", ""};
         loadProductsFromDB();
         productModel = new DefaultTableModel(allProductData, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -525,13 +528,13 @@ public class HomePage extends javax.swing.JFrame {
         header.setReorderingAllowed(false);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 60)));
 
-        // stock is column 6 — colour rows red when no stock
+        // stock is column 7 — colour rows red when no stock
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 super.getTableCellRendererComponent(t, v, sel, foc, r, c);
-                String stock = t.getModel().getValueAt(r, 6) != null
-                    ? t.getModel().getValueAt(r, 6).toString() : "";
+                String stock = t.getModel().getValueAt(r, 7) != null
+                        ? t.getModel().getValueAt(r, 7).toString() : "";
                 boolean noStock  = "NO STOCK".equals(stock);
                 boolean atLimit  = "LIMIT".equals(stock);
                 boolean dimmed   = noStock || atLimit;
@@ -544,51 +547,35 @@ public class HomePage extends javax.swing.JFrame {
                 }
                 setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
                 if (sel) setBackground(new Color(37, 99, 168, 50));
-                // stock column is 6 — colour it green/amber/red/orange
-                if (c == 6) {
+                // stock column is 7 — colour it green/amber/red/orange
+                if (c == 7) {
                     if ("IN STOCK".equals(stock))   setForeground(new Color(0x4ade80));
                     if ("LOW STOCK".equals(stock))  setForeground(new Color(0xfbbf24));
                     if ("NO STOCK".equals(stock))   setForeground(new Color(0xf87171));
-                    if ("LIMIT".equals(stock))      setForeground(new Color(0xf97316)); // orange
+                    if ("LIMIT".equals(stock))      setForeground(new Color(0xf97316));
                 }
                 return this;
             }
         };
-        // name column (0) — styled as a clickable link
-        table.getColumnModel().getColumn(0).setCellRenderer((t, v, sel, foc, r, c) -> {
-            String stock = t.getModel().getValueAt(r, 6) != null
-                ? t.getModel().getValueAt(r, 6).toString() : "";
-            boolean noStock = "NO STOCK".equals(stock) || "LIMIT".equals(stock);
-            Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
-            if (sel) bg = new Color(37, 99, 168, 50);
-            JLabel lbl = new JLabel("<html><u>" + (v != null ? v.toString() : "") + "</u></html>");
-            lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            lbl.setForeground(noStock ? new Color(255, 255, 255, 80) : NEON_LT);
-            lbl.setBackground(bg);
-            lbl.setOpaque(true);
-            lbl.setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
-            lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            return lbl;
-        });
-        // apply to description, package type, unit, units/pack, stock (cols 1-6 except 5)
-        for (int i = 1; i < 7; i++) {
+        // apply to name, description, package type, unit, units/pack, price, stock (cols 0-6)
+        for (int i = 0; i < 8; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
-        // price renderer — column 5, reads stock from col 6, applies per-item campaign discount
-        table.getColumnModel().getColumn(5).setCellRenderer((t, v, sel, foc, r, c) -> {
-            String stock = t.getModel().getValueAt(r, 6) != null
-                ? t.getModel().getValueAt(r, 6).toString() : "";
+        // price renderer — column 6, reads stock from col 7, applies per-item campaign discount
+        table.getColumnModel().getColumn(6).setCellRenderer((t, v, sel, foc, r, c) -> {
+            String stock = t.getModel().getValueAt(r, 7) != null
+                    ? t.getModel().getValueAt(r, 7).toString() : "";
             boolean noStock = "NO STOCK".equals(stock) || "LIMIT".equals(stock);
             Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
             if (sel) bg = new Color(37, 99, 168, 50);
 
             // look up per-item discount for this specific product from the active campaign
-            String prodName = t.getModel().getValueAt(r, 0) != null
-                ? t.getModel().getValueAt(r, 0).toString() : "";
+            String prodName = t.getModel().getValueAt(r, 1) != null
+                    ? t.getModel().getValueAt(r, 1).toString() : "";
             PromoManager.Campaign activeCamp = PromoManager.getCampaign(activePromo);
             double discountRate = activeCamp != null
-                ? PromoManager.getItemDiscountRate(activePromo, prodName) : 1.0;
+                    ? PromoManager.getItemDiscountRate(activePromo, prodName) : 1.0;
             boolean promoApplies  = discountRate < 1.0 && !noStock;
             boolean loyaltyApplies = OrderManager.isLoyaltyOrder() && !noStock;
             boolean applyDiscount = promoApplies || loyaltyApplies;
@@ -599,10 +586,10 @@ public class HomePage extends javax.swing.JFrame {
             if (applyDiscount) {
                 String orig = v != null ? v.toString() : "";
                 try {
-                    double price = Double.parseDouble(orig.replace("\u00a3", ""));
+                    double price = Double.parseDouble(orig.replace("£", ""));
                     double rate  = (promoApplies ? discountRate : 1.0) * (loyaltyApplies ? 0.9 : 1.0);
                     double disc  = Math.round(price * rate * 100.0) / 100.0;
-                    JLabel discLbl = new JLabel(String.format("\u00a3%.2f", disc));
+                    JLabel discLbl = new JLabel(String.format("£%.2f", disc));
                     discLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
                     discLbl.setForeground(new Color(0x4ade80));
                     JLabel origLbl = new JLabel(orig);
@@ -626,9 +613,9 @@ public class HomePage extends javax.swing.JFrame {
 
 
         // add button — column 7; OUT when no stock, LIMIT when customer hit order cap
-        table.getColumnModel().getColumn(7).setCellRenderer((t, v, sel, foc, r, c) -> {
-            String stock = t.getModel().getValueAt(r, 6) != null
-                ? t.getModel().getValueAt(r, 6).toString() : "";
+        table.getColumnModel().getColumn(8).setCellRenderer((t, v, sel, foc, r, c) -> {
+            String stock = t.getModel().getValueAt(r, 7) != null
+                    ? t.getModel().getValueAt(r, 7).toString() : "";
             boolean noStock = "NO STOCK".equals(stock);
             boolean atLimit = "LIMIT".equals(stock);
             boolean blocked = noStock || atLimit;
@@ -644,55 +631,44 @@ public class HomePage extends javax.swing.JFrame {
             wrap.add(btn);
             return wrap;
         });
-        table.getColumnModel().getColumn(7).setPreferredWidth(90);
-        table.getColumnModel().getColumn(7).setMaxWidth(110);
+        table.getColumnModel().getColumn(8).setPreferredWidth(90);
+        table.getColumnModel().getColumn(8).setMaxWidth(110);
 
         // pin the narrow columns so package type / unit / units-per-pack / price / stock / add dont balloon
-        table.getColumnModel().getColumn(2).setPreferredWidth(110);
-        table.getColumnModel().getColumn(2).setMaxWidth(140);
-        table.getColumnModel().getColumn(3).setPreferredWidth(80);
-        table.getColumnModel().getColumn(3).setMaxWidth(100);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setMaxWidth(140);
         table.getColumnModel().getColumn(4).setPreferredWidth(80);
         table.getColumnModel().getColumn(4).setMaxWidth(100);
-        table.getColumnModel().getColumn(5).setPreferredWidth(110);
-        table.getColumnModel().getColumn(5).setMaxWidth(140);
+        table.getColumnModel().getColumn(5).setPreferredWidth(80);
+        table.getColumnModel().getColumn(5).setMaxWidth(100);
         table.getColumnModel().getColumn(6).setPreferredWidth(110);
-        table.getColumnModel().getColumn(6).setMaxWidth(130);
+        table.getColumnModel().getColumn(6).setMaxWidth(140);
+        table.getColumnModel().getColumn(7).setPreferredWidth(110);
+        table.getColumnModel().getColumn(7).setMaxWidth(130);
+        // Hide the itemId column (index 0)
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.getColumnModel().getColumn(0).setWidth(0);
 
         // clicking the add button (column 7) adds item to cart, enforces stock limit,
         // then refreshes stock status colours across the whole table
-        table.addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
-            @Override public void mouseMoved(java.awt.event.MouseEvent e) {
-                int col = table.columnAtPoint(e.getPoint());
-                table.setCursor(col == 0
-                    ? Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-                    : Cursor.getDefaultCursor());
-            }
-        });
-
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
-                if (col == 0 && row >= 0) {
-                    String name        = safeCell(productModel.getValueAt(row, 0));
-                    String description = safeCell(productModel.getValueAt(row, 1));
-                    String packageType = safeCell(productModel.getValueAt(row, 2));
-                    String unit        = safeCell(productModel.getValueAt(row, 3));
-                    String unitsPack   = safeCell(productModel.getValueAt(row, 4));
-                    String price       = safeCell(productModel.getValueAt(row, 5));
-                    String stock       = safeCell(productModel.getValueAt(row, 6));
-                    new ProductViewDialog(HomePage.this, name, description,
-                            packageType, unit, unitsPack, price, stock).setVisible(true);
+
+                if (row >= 0 && col != 8) {
+                    showProductDetailsDialog(row);
                 }
-                if (col == 7 && row >= 0) {
-                    Object stockVal = productModel.getValueAt(row, 6);
+
+                if (col == 8 && row >= 0) {
+                    Object stockVal = productModel.getValueAt(row, 7);
                     String stockStr = stockVal != null ? stockVal.toString() : "";
                     // block if no stock or customer already hit the per-order limit
                     if (!"NO STOCK".equals(stockStr) && !"LIMIT".equals(stockStr)) {
-                        String prodName  = productModel.getValueAt(row, 0).toString();
-                        String priceStr  = productModel.getValueAt(row, 5).toString()
-                                               .replace("\u00a3", "").trim();
+                        String prodName  = productModel.getValueAt(row, 1).toString();
+                        String priceStr  = productModel.getValueAt(row, 6).toString()
+                                .replace("£", "").trim();
                         // extra safety check: cart qty must be under the stock_limit cap
                         int limitQty = stockLimitMap.getOrDefault(prodName, Integer.MAX_VALUE);
                         int cartQty  = 0;
@@ -702,21 +678,31 @@ public class HomePage extends javax.swing.JFrame {
                         if (cartQty >= limitQty) return; // already at the per-order cap
                         try {
                             double unitPrice = Double.parseDouble(priceStr);
-                            // apply per-item discount from active campaign if this product has one
+
                             double itemRate = PromoManager.getItemDiscountRate(activePromo, prodName);
                             if (itemRate < 1.0) {
                                 unitPrice = Math.round(unitPrice * itemRate * 100.0) / 100.0;
                             }
-                            // loyalty 10% off on every 10th order
+
                             if (OrderManager.isLoyaltyOrder()) {
                                 unitPrice = Math.round(unitPrice * 0.9 * 100.0) / 100.0;
                             }
-                            CartManager.addItem(prodName, "", unitPrice, 1, limitQty);
+
+                            String itemId = productModel.getValueAt(row, 0).toString();
+                            CartManager.addItem(itemId, 1);
+
+                        } catch (java.io.IOException ex) {
+                            JOptionPane.showMessageDialog(
+                                    HomePage.this,
+                                    "Failed to add item to cart.",
+                                    "Error",
+                                    JOptionPane.ERROR_MESSAGE
+                            );
                         } catch (NumberFormatException ignored) {}
 
                         // recompute stock status for every row so colours update live
                         for (Object[] dataRow : allProductData) {
-                            dataRow[6] = computeStockStatus(dataRow[0].toString());
+                            dataRow[7] = computeStockStatus(dataRow[1].toString());
                         }
                         filterTable(); // repopulates the model with new statuses
 
@@ -742,8 +728,8 @@ public class HomePage extends javax.swing.JFrame {
         promoBannerLbl.setOpaque(true);
         promoBannerLbl.setBackground(new Color(0x0a1f0a));
         promoBannerLbl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(74, 222, 128, 60)),
-            BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+                BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(74, 222, 128, 60)),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)));
         promoBannerLbl.setAlignmentX(LEFT_ALIGNMENT);
         promoBannerLbl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         promoBannerLbl.setVisible(false);
@@ -751,14 +737,14 @@ public class HomePage extends javax.swing.JFrame {
 
         // loyalty banner shown when the next order will be a 10th milestone
         loyaltyBannerLbl = new JLabel(
-            "  LOYALTY REWARD \u2014 This is your 10th order! 10% off everything. Prices below include your discount.");
+                "  LOYALTY REWARD — This is your 10th order! 10% off everything. Prices below include your discount.");
         loyaltyBannerLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
         loyaltyBannerLbl.setForeground(new Color(0xfbbf24));
         loyaltyBannerLbl.setOpaque(true);
         loyaltyBannerLbl.setBackground(new Color(0x1a1200));
         loyaltyBannerLbl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(251, 191, 36, 60)),
-            BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+                BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(251, 191, 36, 60)),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)));
         loyaltyBannerLbl.setAlignmentX(LEFT_ALIGNMENT);
         loyaltyBannerLbl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         loyaltyBannerLbl.setVisible(OrderManager.isLoyaltyOrder());
@@ -775,8 +761,110 @@ public class HomePage extends javax.swing.JFrame {
         cataloguePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
     }
 
-    private static String safeCell(Object val) {
-        return val != null ? val.toString() : "—";
+    private void showProductDetailsDialog(int row) {
+        if (row < 0 || row >= productModel.getRowCount()) return;
+
+        String itemId       = String.valueOf(productModel.getValueAt(row, 0));
+        String name         = String.valueOf(productModel.getValueAt(row, 1));
+        String description  = String.valueOf(productModel.getValueAt(row, 2));
+        String packageType  = String.valueOf(productModel.getValueAt(row, 3));
+        String unit         = String.valueOf(productModel.getValueAt(row, 4));
+        String unitsPerPack = String.valueOf(productModel.getValueAt(row, 5));
+        String price        = String.valueOf(productModel.getValueAt(row, 6));
+        String stock        = String.valueOf(productModel.getValueAt(row, 7));
+
+        ActivityLoggerClient.log("PRODUCT_VIEW", itemId, null, null);
+
+        JDialog dlg = new JDialog(this, "Product Details", true);
+        dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dlg.setSize(520, 420);
+        dlg.setLocationRelativeTo(this);
+
+        JPanel root = new JPanel();
+        root.setBackground(PANEL);
+        root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
+        root.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(20, 24, 20, 24)
+        ));
+
+        JLabel titleLbl = new JLabel(name);
+        titleLbl.setFont(new Font("Trebuchet MS", Font.BOLD, 20));
+        titleLbl.setForeground(Color.WHITE);
+        titleLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel idLbl = new JLabel("Item ID: " + itemId);
+        idLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        idLbl.setForeground(new Color(255, 255, 255, 110));
+        idLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        root.add(titleLbl);
+        root.add(Box.createVerticalStrut(6));
+        root.add(idLbl);
+        root.add(Box.createVerticalStrut(18));
+
+        root.add(makeDetailLabel("Description: " + description));
+        root.add(Box.createVerticalStrut(8));
+        root.add(makeDetailLabel("Package Type: " + packageType));
+        root.add(Box.createVerticalStrut(8));
+        root.add(makeDetailLabel("Unit: " + unit));
+        root.add(Box.createVerticalStrut(8));
+        root.add(makeDetailLabel("Units per Pack: " + unitsPerPack));
+        root.add(Box.createVerticalStrut(8));
+        root.add(makeDetailLabel("Price: " + price));
+        root.add(Box.createVerticalStrut(8));
+        root.add(makeDetailLabel("Stock Status: " + stock));
+
+        if (activePromo != null) {
+            PromoManager.Campaign activeCamp = PromoManager.getCampaign(activePromo);
+            double discountRate = activeCamp != null
+                    ? PromoManager.getItemDiscountRate(activePromo, name) : 1.0;
+            if (discountRate < 1.0) {
+                try {
+                    double originalPrice = Double.parseDouble(price.replace("£", "").trim());
+                    double discountedPrice = Math.round(originalPrice * discountRate * 100.0) / 100.0;
+                    root.add(Box.createVerticalStrut(8));
+                    JLabel promoLbl = new JLabel("Promo Price: " + String.format("£%.2f", discountedPrice));
+                    promoLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                    promoLbl.setForeground(new Color(0x4ade80));
+                    promoLbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+                    root.add(promoLbl);
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        root.add(Box.createVerticalGlue());
+        root.add(Box.createVerticalStrut(18));
+
+        JPanel buttonRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        buttonRow.setOpaque(false);
+        buttonRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton closeBtn = new JButton("Close");
+        closeBtn.setBackground(new Color(0x0b1220));
+        closeBtn.setForeground(Color.WHITE);
+        closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        closeBtn.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(8, 18, 8, 18)
+        ));
+        closeBtn.setFocusPainted(false);
+        closeBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        closeBtn.addActionListener(e -> dlg.dispose());
+
+        buttonRow.add(closeBtn);
+        root.add(buttonRow);
+
+        dlg.setContentPane(root);
+        dlg.setVisible(true);
+    }
+
+    private JLabel makeDetailLabel(String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        lbl.setForeground(new Color(255, 255, 255, 190));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return lbl;
     }
 
     private JPanel buildCustomerServices() {
@@ -868,8 +956,8 @@ public class HomePage extends javax.swing.JFrame {
         productModel.setRowCount(0);
         for (Object[] row : allProductData) {
             boolean matchesSearch = query.isEmpty()
-                || row[0].toString().toLowerCase().contains(query)
-                || row[1].toString().toLowerCase().contains(query);
+                    || row[1].toString().toLowerCase().contains(query)
+                    || row[2].toString().toLowerCase().contains(query);
             if (matchesSearch) {
                 productModel.addRow(row);
             }
@@ -883,6 +971,8 @@ public class HomePage extends javax.swing.JFrame {
         PromoManager.setUserActivePromo(campaignId);
         // count as a hit for the engagement report
         PromoManager.recordHit(campaignId);
+        // Log campaign view
+        ActivityLoggerClient.log("CAMPAIGN_VIEW", null, null, null);
         searchField.setText("");
         filterTable();
         updatePromoBanner();
@@ -903,8 +993,8 @@ public class HomePage extends javax.swing.JFrame {
                 sb.append(e.getKey()).append(" (").append((int) Math.round(e.getValue())).append("% off)");
             }
             String items = sb.length() > 0 ? sb.toString() : "selected items";
-            promoBannerLbl.setText("  PROMO ACTIVE \u2014 " + camp.name
-                + ". Discounts on: " + items + ". Discounted prices shown below.");
+            promoBannerLbl.setText("  PROMO ACTIVE — " + camp.name
+                    + ". Discounts on: " + items + ". Discounted prices shown below.");
         }
         promoBannerLbl.setVisible(true);
         cataloguePanel.revalidate();
@@ -932,24 +1022,23 @@ public class HomePage extends javax.swing.JFrame {
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(initials,
-                    (getWidth()  - fm.stringWidth(initials)) / 2,
-                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                        (getWidth()  - fm.stringWidth(initials)) / 2,
+                        (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         };
         av.setOpaque(false);
-        av.setOpaque(false);
-        av.setPreferredSize(new java.awt.Dimension(34, 34));
-        av.setMinimumSize(new java.awt.Dimension(34, 34));
-        av.setMaximumSize(new java.awt.Dimension(34, 34));
+        av.setPreferredSize(new Dimension(36, 36));
+        av.setMaximumSize(new Dimension(36, 36));
+        av.setMinimumSize(new Dimension(36, 36));
         return av;
     }
 
-    // <editor-fold defaultstate="collapsed" desc="Variables declaration">//GEN-BEGIN:variables
+    // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel brandLabel;
+    private javax.swing.JButton cartButton;
     private javax.swing.JPanel cataloguePanel;
     private javax.swing.JPanel contentPanel;
-    private javax.swing.JButton cartButton;
     private javax.swing.Box.Filler filler1;
     private javax.swing.Box.Filler filler2;
     private javax.swing.JPanel filterRow;
@@ -959,5 +1048,5 @@ public class HomePage extends javax.swing.JFrame {
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel sectionPromoLabel;
     private javax.swing.JButton signOutButton;
-    // </editor-fold>//GEN-END:variables
+    // End of variables declaration//GEN-END:variables
 }

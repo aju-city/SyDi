@@ -566,7 +566,9 @@ public class CartPage extends javax.swing.JFrame {
                 errLbl.setText("Please enter a valid 3-digit CVV."); return;
             }
 
+            ActivityLoggerClient.log("CHECKOUT", null, null, null);
             OrderManager.placeOrder(CartManager.getItems(), calcSubtotal());
+            ActivityLoggerClient.log("PURCHASE", null, null, null);
             // if a promo was active record how many items were purchased under it before we clear the cart
             String activeP = PromoManager.getUserActivePromo();
             if (activeP != null) {
