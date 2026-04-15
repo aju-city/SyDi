@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ad0a6a2f-0579-486d-abd7-54cd010c2dc4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/config.example.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/SeedPUDemoData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/SimulatePUPurchaseFlow.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/TestFailedPaymentFlow.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/TestGuestCheckoutFlow.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/TestMemberCheckoutFlow.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/TestPUReports.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/TestPUSenarioData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/config.example.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/ActivityLogDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/dao/ActivityLogDAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/CatalogueItemDAO.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/CommercialApplicantDAO.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/CompanyDirectorDAO.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/NonCommercialMemberDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/dao/NonCommercialMemberDAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/OrderItemsDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/dao/OrderItemsDAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/dao/ShoppingCartItemsDAO.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/dao/ShoppingCartItemsDAO.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/db/DatabaseConnection.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/db/DatabaseConnection.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/model/ActivityLog.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/model/ActivityLog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/model/CatalogueItem.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/model/CommercialApplicant.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/model/CompanyDirector.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/model/NonCommercialMember.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/model/NonCommercialMember.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/model/OrderItems.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/model/OrderItems.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/TestCommercialApplicantInsert.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/TestConnection.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/TestInsert.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/dao/CommercialApplicantDAO.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/dao/CompanyDirectorDAO.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/dao/NonCommercialMemberDAO.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/db/DatabaseConnection.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/frontend/src/JavaApplication/nbproject/project.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/frontend/src/JavaApplication/nbproject/project.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/frontend/src/JavaApplication/src/javaapplication/JavaApplication.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/AdminPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/AdminPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/AdminPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/AdminPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartManager$CartItem.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartManager$CartItem.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CartPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ChangePasswordDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$4$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$4$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/CommercialRegistrationDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$10.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$10.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$11.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$11.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$12.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$12.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$13.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$13.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$9.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage$9.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/HomePage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LandingPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$4$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$4$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/LoginDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ManageAccountPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/MyOrdersPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/MyOrdersPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/MyOrdersPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/MyOrdersPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/MyOrdersPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/MyOrdersPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$4$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$4$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/NonCommercialRegistrationDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/OrderManager$Order.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/OrderManager$Order.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/OrderManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/OrderManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/PromoManager$PromoConfig.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/PromoManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/PromoManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$3$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$3$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/RegisterDialog.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/TrackOrderPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/ipos_pu/ViewInvoicesPage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/model/CommercialApplicant.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/model/CompanyDirector.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/model/NonCommercialMember.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/service/IPUService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/service/PUServiceFactory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/service/PUServiceImpl.class" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;DmitriiShevyrev&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/aju-city/SyDi.git&quot;,
+    &quot;accountId&quot;: &quot;35c8e87c-413b-4d44-a0ac-70203de7cd6c&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="3CL22pSFjS88xftZb3KJxA0oGLV" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.JavaApplication.executor": "Run",
+    "Application.TestConnection.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "Dmitrii",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/dmitryshevyrev/GroupProject/SyDi/2nd Deliverable/ipos-pu",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="ipos-pu" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="ipos-pu" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.30387.90" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ad0a6a2f-0579-486d-abd7-54cd010c2dc4" name="Changes" comment="" />
+      <created>1776150324440</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776150324440</updated>
+      <workItem from="1776150325507" duration="3066000" />
+      <workItem from="1776190745188" duration="4355000" />
+      <workItem from="1776202607373" duration="5349000" />
+      <workItem from="1776252794304" duration="18000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
