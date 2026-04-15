@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ad0a6a2f-0579-486d-abd7-54cd010c2dc4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/db/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/db/DatabaseConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/db/DatabaseConnection.class" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/db/DatabaseConnection.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/src/main/resources/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/src/main/resources/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/target/classes/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/target/classes/target/classes/src/main/resources/config.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/target/classes/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/target/classes/ipos-pu-backend.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/target/classes/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/target/classes/target/classes/target/classes/target/classes/target/classes/target/classes/src/main/resources/config.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/JavaApplication/src/ipos_pu/DBConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/JavaApplication/src/ipos_pu/DBConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/AdminPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CartManager$CartItem.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CartManager.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CartPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ChangePasswordDialog$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ChangePasswordDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialApplicationRequest.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$4$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/CommercialRegistrationDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/DBConnection.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/Director.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$10.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$11.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$12.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$13.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$5.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$6.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$7.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$8.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage$9.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HomePage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/HttpClient.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LandingPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LandingPage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LandingPage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LandingPage$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LandingPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LoginDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LoginDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LoginDialog$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LoginDialog$4$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LoginDialog$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/LoginDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ManageAccountPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ManageAccountPage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ManageAccountPage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ManageAccountPage$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ManageAccountPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/MyOrdersPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/MyOrdersPage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/MyOrdersPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/NonCommercialRegistrationDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/NonCommercialRegistrationDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/NonCommercialRegistrationDialog$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/NonCommercialRegistrationDialog$4$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/NonCommercialRegistrationDialog$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/NonCommercialRegistrationDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/OrderManager$Order.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/OrderManager.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/PromoManager$Campaign.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/PromoManager.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/RegisterDialog$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/RegisterDialog$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/RegisterDialog$3$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/RegisterDialog$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/RegisterDialog.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/TrackOrderPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/TrackOrderPage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/TrackOrderPage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/TrackOrderPage$4.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/TrackOrderPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ViewInvoicesPage$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ViewInvoicesPage$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ViewInvoicesPage$3.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/ipos_pu/ViewInvoicesPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/ipos-pu/javaapplication/JavaApplication.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../out/production/SyDi/config.properties" beforeDir="false" afterPath="$PROJECT_DIR$/../../out/production/SyDi/config.properties" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;DmitriiShevyrev&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/aju-city/SyDi.git&quot;,
+    &quot;accountId&quot;: &quot;35c8e87c-413b-4d44-a0ac-70203de7cd6c&quot;
+  }
+}</component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="3CL22pSFjS88xftZb3KJxA0oGLV" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.JavaApplication.executor": "Run",
+    "Application.TestConnection.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/Users/dmitryshevyrev/GroupProject/SyDi/2nd Deliverable/ipos-pu",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.30387.90" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ad0a6a2f-0579-486d-abd7-54cd010c2dc4" name="Changes" comment="" />
+      <created>1776150324440</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776150324440</updated>
+      <workItem from="1776150325507" duration="3066000" />
+      <workItem from="1776190745188" duration="4355000" />
+      <workItem from="1776202607373" duration="2985000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

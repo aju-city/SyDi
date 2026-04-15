@@ -38,6 +38,13 @@ public class DatabaseConnection {
                     .getClassLoader()
                     .getResourceAsStream("config.properties");
 
+            if (input == null) {
+                System.err.println(
+                        "config.properties not found on the classpath. "
+                                + "Add it under src/main/resources/ and rebuild the project.");
+                return null;
+            }
+
             // Load values from config file
             props.load(input);
 
