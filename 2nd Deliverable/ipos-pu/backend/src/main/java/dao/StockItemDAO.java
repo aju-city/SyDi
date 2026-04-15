@@ -1,5 +1,6 @@
 package dao;
 
+import db.DatabaseConnection;
 import model.StockItem;
 
 import java.sql.*;
@@ -110,6 +111,27 @@ public class StockItemDAO {
             stmt.setInt(3, quantityToDeduct);
 
             return stmt.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Checks if an Item exists.
+     */
+    public static boolean itemExists(String itemId) throws Exception {
+        String sql = "SELECT 1 FROM ipos_ca.stock_items WHERE item_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            System.out.println("DEBUG itemExists(" + itemId + ")");
+            System.out.println("DEBUG connected to schema: " + conn.getCatalog());
+
+            stmt.setString(1, itemId);
+            ResultSet rs = stmt.executeQuery();
+            boolean exists = rs.next();
+
+            System.out.println("DEBUG exists? " + exists);
+            return exists;
         }
     }
 

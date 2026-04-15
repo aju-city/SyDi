@@ -32,6 +32,25 @@ public class NonCommercialMemberDAO {
         }
     }
 
+    public void updateAccountNumber(int memberId, String accountNo) throws SQLException {
+        String sql = "UPDATE NonCommercialMember SET MemberAccountNo = ? WHERE MemberID = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, accountNo);
+            stmt.setInt(2, memberId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public boolean updatePasswordAndClearFlag(String email, String newPassword) throws Exception {
+        String sql = "UPDATE NonCommercialMember SET Password = ?, MustChangePassword = 0 WHERE Email = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, newPassword);
+            stmt.setString(2, email);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
     /**
      * Registers a new member and returns the generated member id.
      */

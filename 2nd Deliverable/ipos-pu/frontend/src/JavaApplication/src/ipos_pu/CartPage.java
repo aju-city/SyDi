@@ -6,9 +6,13 @@ package ipos_pu;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
+
 
 public class CartPage extends javax.swing.JFrame {
 
@@ -27,13 +31,22 @@ public class CartPage extends javax.swing.JFrame {
     private DefaultTableModel cartModel;
     private JLabel subtotalLbl, totalLbl;
     private JPanel paymentCard, successCard;
-
+    private JTable table;
 
 
     public CartPage(String username) {
         this.username = username;
+
+        String[] cols = {"ITEM_ID", "PRODUCT", "UNIT PRICE", "QTY", "TOTAL", ""};
+        cartModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+
         initComponents();
         buildUI();
+        attachCartListeners();
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        loadCartItemsFromBackend();
     }
 
     public CartPage() { this("Guest"); }
@@ -68,12 +81,121 @@ public class CartPage extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
 
+    private String extract(String json, String key) {
+        String search = "\"" + key + "\"";
+        int start = json.indexOf(search);
+        if (start == -1) return "";
 
+        int colon = json.indexOf(":", start);
+        if (colon == -1) return "";
+
+        int valueStart = colon + 1;
+
+        // Skip whitespace
+        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
+            valueStart++;
+        }
+
+        // Quoted string
+        if (json.charAt(valueStart) == '"') {
+            int endQuote = json.indexOf("\"", valueStart + 1);
+            return json.substring(valueStart + 1, endQuote);
+        }
+
+        // Number (supports negative and decimals)
+        int end = valueStart;
+        while (end < json.length() &&
+                (Character.isDigit(json.charAt(end)) ||
+                        json.charAt(end) == '-' ||
+                        json.charAt(end) == '.')) {
+            end++;
+        }
+
+        return json.substring(valueStart, end);
+    }
+
+
+
+    private void loadCartItemsFromBackend() {
+        boolean isGuest = "Guest".equals(username);
+        String identifier = isGuest ? CartManager.guestToken : username;
+        try {
+            String urlStr = isGuest
+                    ? "http://localhost:8080/api/cart/get?guestToken=" + identifier
+                    : "http://localhost:8080/api/cart/get?memberEmail=" + identifier;
+
+
+            // --- 1. HTTP GET request ---
+            java.net.URL url = new java.net.URL(urlStr);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            java.io.BufferedReader reader =
+                    new java.io.BufferedReader(new java.io.InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) sb.append(line);
+            reader.close();
+
+            String json = sb.toString();
+            System.out.println("DEBUG cart JSON = " + json);
+
+            // --- 2. Clear table ---
+            cartModel.setRowCount(0);
+
+            // --- 3. Parse manually: find the items array ---
+            int start = json.indexOf("[");
+            int end   = json.lastIndexOf("]");
+            if (start == -1 || end == -1) return;
+
+            String itemsArray = json.substring(start + 1, end).trim();
+            if (itemsArray.isEmpty()) return;
+
+            // Split objects: "},{"
+            String[] objects = itemsArray.split("\\},\\{");
+
+            for (String obj : objects) {
+                String o = obj.replace("{", "").replace("}", "").trim();
+
+                String name     = extract(o, "name");
+                String priceStr = extract(o, "price");
+                String qtyStr   = extract(o, "qty");
+                String itemId = extract(o, "itemId");
+
+                double price = Double.parseDouble(priceStr);
+                int qty      = Integer.parseInt(qtyStr);
+
+                cartModel.addRow(new Object[]{
+                        itemId,     // hidden column
+                        name,
+                        String.format("£%.2f", price),
+                        qty,
+                        String.format("£%.2f", price * qty),
+                        "Remove"
+                });
+            }
+
+            updateTotals();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Unable to load cart items.\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void refreshCartUI() {
+        getContentPane().removeAll();
+        buildUI();
+        revalidate();
+        repaint();
+    }
 
     private void buildUI() {
         setTitle("IPOS-PU \u00b7 Cart");
         setSize(1280, 760);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setMinimumSize(new Dimension(1000, 620));
         setLocationRelativeTo(null);
         getContentPane().setBackground(BG);
@@ -218,21 +340,8 @@ public class CartPage extends javax.swing.JFrame {
         card.add(sectionLabel("CART ITEMS"));
         card.add(Box.createVerticalStrut(12));
 
-        String[] cols = {"PRODUCT", "UNIT PRICE", "QTY", "TOTAL", ""};
-        cartModel = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        for (CartManager.CartItem item : CartManager.getItems()) {
-            cartModel.addRow(new Object[]{
-                item.name + "  (" + item.category + ")",
-                String.format("\u00a3%.2f", item.unitPrice),
-                item.qty,
-                String.format("\u00a3%.2f", item.unitPrice * item.qty),
-                "Remove"
-            });
-        }
+        table = new JTable(cartModel);
 
-        JTable table = new JTable(cartModel);
         table.setBackground(PANEL);
         table.setForeground(new Color(255, 255, 255, 200));
         table.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -265,7 +374,7 @@ public class CartPage extends javax.swing.JFrame {
         };
         for (int i = 0; i < 4; i++) table.getColumnModel().getColumn(i).setCellRenderer(cr);
 
-        table.getColumnModel().getColumn(2).setCellRenderer((t, v, sel, foc, r, c) -> {
+        table.getColumnModel().getColumn(3).setCellRenderer((t, v, sel, foc, r, c) -> {
             int qty = v instanceof Integer ? (Integer) v : 0;
             Color rowBg = r % 2 == 0 ? PANEL : new Color(0x0a1018);
             JPanel p = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 8));
@@ -301,11 +410,11 @@ public class CartPage extends javax.swing.JFrame {
             p.add(plus);
             return p;
         });
-        table.getColumnModel().getColumn(2).setPreferredWidth(110);
-        table.getColumnModel().getColumn(2).setMaxWidth(130);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setMaxWidth(130);
 
 
-        table.getColumnModel().getColumn(4).setCellRenderer((t, v, sel, foc, r, c) -> {
+        table.getColumnModel().getColumn(5).setCellRenderer((t, v, sel, foc, r, c) -> {
             JButton btn = new JButton("Remove");
             btn.setFont(new Font("Segoe UI", Font.PLAIN, 10));
             btn.setForeground(new Color(0xf87171));
@@ -319,108 +428,67 @@ public class CartPage extends javax.swing.JFrame {
             wrap.add(btn);
             return wrap;
         });
-        table.getColumnModel().getColumn(4).setPreferredWidth(80);
-        table.getColumnModel().getColumn(4).setMaxWidth(90);
+        table.getColumnModel().getColumn(5).setPreferredWidth(80);
+        table.getColumnModel().getColumn(5).setMaxWidth(90);
 
-        table.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
-                int col = table.columnAtPoint(e.getPoint());
-                int row = table.rowAtPoint(e.getPoint());
-                if (row < 0) return;
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+        table.getColumnModel().getColumn(0).setWidth(0);
 
-                if (col == 2) {
-                    Rectangle cellRect = table.getCellRect(row, col, false);
-                    int localX = e.getX() - cellRect.x;
-                    boolean isMinus = localX < cellRect.width * 0.34;
-                    boolean isPlus  = localX > cellRect.width * 0.66;
-                    if (!isMinus && !isPlus) return;
+        JScrollPane sp = new JScrollPane(table);
+        sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 50), 1));
+        sp.getViewport().setBackground(PANEL);
+        sp.setAlignmentX(LEFT_ALIGNMENT);
+        sp.setPreferredSize(new Dimension(0, 210));
+        sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
+        card.add(sp);
 
-                    int qty = (Integer) cartModel.getValueAt(row, 2);
-
-                    String rawProduct = cartModel.getValueAt(row, 0).toString();
-                    int sepIdx = rawProduct.lastIndexOf("  (");
-                    String prodName = sepIdx >= 0 ? rawProduct.substring(0, sepIdx) : rawProduct;
-
-                    if (isPlus) {
-                        // enforce stock limit — look up the cap stored on the CartItem
-                        int limit = Integer.MAX_VALUE;
-                        for (CartManager.CartItem ci : CartManager.getItems()) {
-                            if (ci.name.equals(prodName)) { limit = ci.stockLimit; break; }
-                        }
-                        if (qty >= limit) return; // already at cap, do nothing
-                        qty++;
-                    } else {
-                        qty--;
-                    }
-
-                    if (qty <= 0) {
-                        cartModel.removeRow(row);
-                        CartManager.removeItem(prodName);
-                    } else {
-                        cartModel.setValueAt(qty, row, 2);
-                        String priceStr = cartModel.getValueAt(row, 1).toString().replace("\u00a3", "");
-                        try {
-                            double unitPrice = Double.parseDouble(priceStr);
-                            cartModel.setValueAt(String.format("\u00a3%.2f", unitPrice * qty), row, 3);
-                        } catch (NumberFormatException ignored) {}
-                        CartManager.setQty(prodName, qty);
-                    }
-                    updateTotals();
-                } else if (col == 4) {
-                    String rawProduct = cartModel.getValueAt(row, 0).toString();
-                    int sepIdx = rawProduct.lastIndexOf("  (");
-                    String prodName = sepIdx >= 0 ? rawProduct.substring(0, sepIdx) : rawProduct;
-                    cartModel.removeRow(row);
-                    CartManager.removeItem(prodName);
-                    updateTotals();
-                }
-            }
-        });
-
-        if (cartModel.getRowCount() == 0) {
-            JPanel empty = new JPanel(new GridBagLayout());
-            empty.setBackground(PANEL);
-            empty.setPreferredSize(new Dimension(0, 130));
-            empty.setMaximumSize(new Dimension(Integer.MAX_VALUE, 130));
-            empty.setAlignmentX(LEFT_ALIGNMENT);
-
-            JLabel icon = new JLabel("[ ]");
-            icon.setFont(new Font("Segoe UI", Font.BOLD, 22));
-            icon.setForeground(new Color(37, 99, 168, 80));
-
-            JLabel msg = new JLabel("Your cart is empty");
-            msg.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            msg.setForeground(new Color(255, 255, 255, 80));
-
-            JLabel hint = new JLabel("Go back to Home and click + ADD on a product");
-            hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-            hint.setForeground(new Color(255, 255, 255, 45));
-
-            JPanel stack = new JPanel();
-            stack.setOpaque(false);
-            stack.setLayout(new BoxLayout(stack, BoxLayout.Y_AXIS));
-            icon.setAlignmentX(CENTER_ALIGNMENT);
-            msg.setAlignmentX(CENTER_ALIGNMENT);
-            hint.setAlignmentX(CENTER_ALIGNMENT);
-            stack.add(icon);
-            stack.add(Box.createVerticalStrut(6));
-            stack.add(msg);
-            stack.add(Box.createVerticalStrut(4));
-            stack.add(hint);
-
-            empty.add(stack);
-            card.add(empty);
-        } else {
-            JScrollPane sp = new JScrollPane(table);
-            sp.setBorder(BorderFactory.createLineBorder(new Color(37, 99, 168, 50), 1));
-            sp.getViewport().setBackground(PANEL);
-            sp.setAlignmentX(LEFT_ALIGNMENT);
-            sp.setPreferredSize(new Dimension(0, 210));
-            sp.setMaximumSize(new Dimension(Integer.MAX_VALUE, 250));
-            card.add(sp);
-        }
         return card;
     }
+
+
+    private void sendQtyUpdateToBackend(String identifier, String itemId, int delta, boolean isGuest) throws Exception {
+        String json = isGuest
+                ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}"
+                : "{\"memberEmail\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}";
+
+        URL url = new URL("http://localhost:8080/api/cart/add");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes());
+        }
+
+        if (conn.getResponseCode() >= 400) {
+            throw new Exception("Backend rejected update (stock limit or unavailable)");
+        }
+    }
+
+
+    private void sendRemoveToBackend(String identifier, String itemId, boolean isGuest) throws Exception {
+        String json = isGuest
+                ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\"}"
+                : "{\"memberEmail\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\"}";
+
+        URL url = new URL("http://localhost:8080/api/cart/remove");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes());
+        }
+
+        if (conn.getResponseCode() >= 400) {
+            throw new Exception("Failed to remove item");
+        }
+    }
+
+
 
     private JPanel buildDeliverySection() {
         JPanel card = makeCard();
@@ -561,7 +629,44 @@ public class CartPage extends javax.swing.JFrame {
                 PromoManager.recordPurchase(activeP, totalQty);
                 PromoManager.setUserActivePromo(null);
             }
+
+
+            try {
+                boolean isGuest = guest; // you already have this variable
+                String identifier = isGuest ? CartManager.guestToken : CartManager.memberEmail;
+
+                String json = isGuest
+                        ? "{\"guestToken\":\"" + identifier + "\"}"
+                        : "{\"memberEmail\":\"" + identifier + "\"}";
+
+                URL url = new URL("http://localhost:8080/api/cart/clear");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                conn.getOutputStream().write(json.getBytes());
+                conn.getOutputStream().close();
+
+                if (conn.getResponseCode() != 200) {
+                    System.out.println("Failed to clear backend cart");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+
             CartManager.clear();
+
+            if (guest) {
+                try {
+                    CartManager.guestToken = CartManager.createGuestCartOnBackend();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Could not create a new guest cart.");
+                }
+            }
+
             paymentCard.setVisible(false);
             successCard.setVisible(true);
             successCard.revalidate();
@@ -663,13 +768,18 @@ public class CartPage extends javax.swing.JFrame {
     }
 
     private double calcSubtotal() {
-        if (cartModel == null) return 0;
-        double sum = 0;
+        double sum = 0.0;
+        if (cartModel == null) return 0.0;
+
         for (int i = 0; i < cartModel.getRowCount(); i++) {
-            String s = cartModel.getValueAt(i, 3).toString().replace("\u00a3", "");
-            try { sum += Double.parseDouble(s); } catch (NumberFormatException ignored) {}
+            Object val = cartModel.getValueAt(i, 4); // TOTAL column
+            if (val == null) continue;
+            String totalStr = val.toString().replace("£", "").trim();
+            try {
+                sum += Double.parseDouble(totalStr);
+            } catch (NumberFormatException ignored) {}
         }
-        return Math.round(sum * 100.0) / 100.0;
+        return sum;
     }
 
 
@@ -857,6 +967,63 @@ public class CartPage extends javax.swing.JFrame {
         av.setMaximumSize(new Dimension(36, 36));
         av.setMinimumSize(new Dimension(36, 36));
         return av;
+    }
+
+    private void attachCartListeners() {
+        if (table == null) return;
+
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override public void mouseClicked(java.awt.event.MouseEvent e) {
+                int col = table.columnAtPoint(e.getPoint());
+                int row = table.rowAtPoint(e.getPoint());
+                if (row < 0) return;
+
+                String itemId = cartModel.getValueAt(row, 0).toString();
+
+                // guest vs member (computed once)
+                boolean isGuest = "Guest".equals(username);
+                String identifier = isGuest ? CartManager.guestToken : username;
+
+                if (col == 3) {
+                    Rectangle cellRect = table.getCellRect(row, col, false);
+                    int localX = e.getX() - cellRect.x;
+                    boolean isMinus = localX < cellRect.width * 0.34;
+                    boolean isPlus  = localX > cellRect.width * 0.66;
+                    if (!isMinus && !isPlus) return;
+
+                    int delta = isPlus ? 1 : -1;
+
+                    try {
+                        sendQtyUpdateToBackend(identifier, itemId, delta, isGuest);
+                        loadCartItemsFromBackend();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+
+                else if (col == 5) {
+                    try {
+                        sendRemoveToBackend(identifier, itemId, isGuest);
+                        loadCartItemsFromBackend();
+                    } catch (Exception ex) {
+                        JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        });
+    }
+
+
+    private JTable findCartTable() {
+        // Your cart table is always inside the first JScrollPane in the content
+        for (Component c : getContentPane().getComponents()) {
+            if (c instanceof JScrollPane sp) {
+                if (sp.getViewport().getView() instanceof JTable t) {
+                    return t;
+                }
+            }
+        }
+        return null;
     }
 
     private String getInitials(String name) {

@@ -4,6 +4,10 @@
  */
 package ipos_pu;
 import java.awt.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.swing.*;
 
 /**
@@ -263,8 +267,7 @@ public class LoginDialog extends javax.swing.JDialog {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void signInButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signInButtonActionPerformed
-        // TODO add your handling code here:
+    private void signInButtonActionPerformed(java.awt.event.ActionEvent evt) {
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword()).trim();
 
@@ -280,24 +283,75 @@ public class LoginDialog extends javax.swing.JDialog {
             showError("Please enter your password.");
             return;
         }
-        //logic to load into admin page
-        errorLabel.setVisible(false);
-        if (username.equals("admin")) {
-            java.awt.Window owner = getOwner();
-            this.dispose();
-            if (owner != null) owner.dispose();
-            new AdminPage().setVisible(true);
-            // if the test password detected it taked to first time password
-        } else if (password.equals("test")) {
-            ChangePasswordDialog cpd = new ChangePasswordDialog(
-                (java.awt.Frame) getOwner(), true, username);
-            this.dispose();
-            cpd.setVisible(true);
-        } else {
-            java.awt.Window owner = getOwner();
-            this.dispose();
-            if (owner != null) owner.dispose();
-            new HomePage(username).setVisible(true);
+
+        try {
+            URL url = new URL("http://localhost:8080/api/login");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String json = "{ \"emailOrUsername\": \"" + username + "\", \"password\": \"" + password + "\" }";
+            conn.getOutputStream().write(json.getBytes("UTF-8"));
+
+            // Read response (Java 8 compatible)
+            InputStream is = conn.getInputStream();
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = is.read(buffer)) != -1) {
+                result.write(buffer, 0, length);
+            }
+            String response = result.toString("UTF-8");
+
+            // Parse JSON
+            com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(response).getAsJsonObject();
+
+            boolean success = obj.get("success").getAsBoolean();
+
+            if (!success) {
+                String message = obj.get("message").getAsString();
+                showError(message);
+                return;
+            }
+
+            String role = obj.get("role").getAsString();
+
+            if (role.equals("admin")) {
+                // Admin login
+                java.awt.Window owner = getOwner();
+                this.dispose();
+                if (owner != null) owner.dispose();
+                new AdminPage().setVisible(true);
+                return;
+            }
+
+            if (role.equals("member")) {
+                boolean mustChange = obj.get("mustChangePassword").getAsBoolean();
+
+                if (mustChange) {
+                    // Redirect to Change Password dialog
+                    ChangePasswordDialog cpd = new ChangePasswordDialog(
+                            (java.awt.Frame) getOwner(), true, username);
+                    this.dispose();
+                    cpd.setVisible(true);
+                    return;
+                }
+
+                CartManager.memberEmail = username;
+                CartManager.guestToken = null;
+
+                // Normal member login → go to HomePage
+                java.awt.Window owner = getOwner();
+                this.dispose();
+                if (owner != null) owner.dispose();
+                new HomePage(username).setVisible(true);
+                return;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showError("Could not connect to server.");
         }
     }//GEN-LAST:event_signInButtonActionPerformed
 

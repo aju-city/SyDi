@@ -133,8 +133,19 @@ private void styleComponents() {
     JButton guestButton = new JButton("CONTINUE AS GUEST");
     styleButton(guestButton, false);
     guestButton.addActionListener(e -> {
-        dispose();
-        new HomePage("Guest").setVisible(true);
+        try {
+            String token = CartManager.createGuestCartOnBackend();
+            CartManager.guestToken = token;
+
+            dispose();
+            new HomePage("Guest").setVisible(true);
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Unable to start guest session.\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     });
 
     contentPanel.add(Box.createVerticalGlue());
