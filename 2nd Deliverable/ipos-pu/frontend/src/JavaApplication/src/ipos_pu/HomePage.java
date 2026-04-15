@@ -11,6 +11,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 
+
 /**
  *
  * @author nuhur
@@ -459,54 +460,100 @@ public class HomePage extends javax.swing.JFrame {
         return card;
     }
 
-    // loads products from the database instead of hardcoded fake ones
-    // if the db is down it shows an error popup so the user knows whats happening
-    private void loadProductsFromDB() {
+    // loads products from the backend, which is connected to the database
+    private void loadProductsFromBackend() {
         java.util.List<Object[]> rows = new java.util.ArrayList<>();
         stockQtyMap.clear();
         stockLimitMap.clear();
 
-        try (java.sql.Connection con = DBConnection.getConnection();
-             java.sql.Statement st = con.createStatement();
-             java.sql.ResultSet rs = st.executeQuery(
-                     "SELECT item_id, name, description, price, quantity, stock_limit FROM ipos_ca.stock_items ORDER BY name")) {
+        try {
+            String json = HttpClient.get("http://localhost:8080/api/catalogue/all");
 
-            while (rs.next()) {
-                String itemId = rs.getString("item_id");
-                String name = rs.getString("name");
-                int qty = rs.getInt("quantity");
-                int lim = rs.getInt("stock_limit");
+            int start = json.indexOf("[");
+            int end = json.lastIndexOf("]");
 
-                stockQtyMap.put(name, qty);
-                stockLimitMap.put(name, lim);
+            if (start == -1 || end == -1) {
+                JOptionPane.showMessageDialog(this, "Invalid catalogue data received.");
+                return;
+            }
 
-                String status = qty == 0 ? "NO STOCK"
-                        : qty < lim ? "LOW STOCK"
+            String array = json.substring(start + 1, end);
+            String[] items = array.split("\\},\\{");
+
+            for (String raw : items) {
+                String item = raw.replace("{", "").replace("}", "");
+
+                String itemId = extract(item, "itemId");
+                String name = extract(item, "name");
+                String description = extract(item, "description");
+                double price = Double.parseDouble(extract(item, "price"));
+                int quantity = Integer.parseInt(extract(item, "quantity"));
+                int stockLimit = Integer.parseInt(extract(item, "stockLimit"));
+
+                stockQtyMap.put(name, quantity);
+                stockLimitMap.put(name, stockLimit);
+
+                String status = quantity == 0 ? "NO STOCK"
+                        : quantity < stockLimit ? "LOW STOCK"
                         : "IN STOCK";
 
                 rows.add(new Object[]{
-                        name,
-                        rs.getString("description"),
-                        String.format("£%.2f", rs.getDouble("price")),
-                        status,
-                        "ADD",
-                        itemId   // NEW hidden column
+                        name,                         // 0
+                        description,                  // 1
+                        String.format("£%.2f", price),// 2
+                        status,                       // 3
+                        "ADD",                        // 4
+                        itemId                        // 5 (hidden)
                 });
             }
 
-        } catch (java.sql.SQLException ex) {
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Could not load products: " + ex.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
+                    "Backend Error", JOptionPane.ERROR_MESSAGE);
         }
 
         allProductData = rows.toArray(new Object[0][]);
     }
 
+
+
+    private String extract(String json, String key) {
+        String search = "\"" + key + "\"";
+        int start = json.indexOf(search);
+        if (start == -1) return null;
+
+        int colon = json.indexOf(":", start);
+        if (colon == -1) return null;
+
+        int valueStart = colon + 1;
+
+        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
+            valueStart++;
+        }
+
+        if (json.charAt(valueStart) == '"') {
+            int endQuote = json.indexOf("\"", valueStart + 1);
+            return json.substring(valueStart + 1, endQuote);
+        }
+
+        int end = valueStart;
+        while (end < json.length() &&
+                (Character.isDigit(json.charAt(end)) ||
+                        json.charAt(end) == '-' ||
+                        json.charAt(end) == '.')) {
+            end++;
+        }
+
+        return json.substring(valueStart, end);
+    }
+
+
+
     private void buildProductTable() {
         // columns: name, description, price, stock status (colour coded), add button
         String[] cols = {"NAME", "DESCRIPTION", "PRICE", "STOCK", "", "ITEM_ID"};
-        loadProductsFromDB();
+        loadProductsFromBackend();
         productModel = new DefaultTableModel(allProductData, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
