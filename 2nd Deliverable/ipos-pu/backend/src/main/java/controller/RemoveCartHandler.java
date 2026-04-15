@@ -19,7 +19,7 @@ public class RemoveCartHandler implements HttpHandler {
         }
 
         try {
-            // read body
+            // Read body
             InputStream is = exchange.getRequestBody();
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -29,12 +29,24 @@ public class RemoveCartHandler implements HttpHandler {
             }
             String body = result.toString("UTF-8");
 
-            String guestToken = extract(body, "guestToken");
-            String itemId     = extract(body, "itemId");
+            // Extract fields
+            String guestToken  = extract(body, "guestToken");
+            String memberEmail = extract(body, "memberEmail");
+            String itemId      = extract(body, "itemId");
 
-            CartDAO.removeItem(guestToken, itemId);
+            System.out.println("DEBUG RemoveCartHandler guestToken  = [" + guestToken + "]");
+            System.out.println("DEBUG RemoveCartHandler memberEmail = [" + memberEmail + "]");
+            System.out.println("DEBUG RemoveCartHandler itemId      = [" + itemId + "]");
+
+            // Route to correct DAO method
+            if (memberEmail != null && !memberEmail.isEmpty()) {
+                CartDAO.removeItemForMember(memberEmail, itemId);
+            } else {
+                CartDAO.removeItem(guestToken, itemId);
+            }
 
             sendJson(exchange, 200, "{ \"status\": \"OK\" }");
+
         } catch (Exception e) {
             e.printStackTrace();
             sendJson(exchange, 500, "{ \"error\": \"Failed to remove item\" }");

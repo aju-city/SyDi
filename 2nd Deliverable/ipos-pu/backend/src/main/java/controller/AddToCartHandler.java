@@ -18,7 +18,7 @@ public class AddToCartHandler implements HttpHandler {
         }
 
         try {
-            // Read full JSON body (Java 8 compatible)
+            // Read full JSON body
             InputStream is = exchange.getRequestBody();
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -28,17 +28,18 @@ public class AddToCartHandler implements HttpHandler {
             }
             String body = result.toString("UTF-8");
 
-            // debug prints
             System.out.println("DEBUG raw body = [" + body + "]");
 
-            // Extract fields manually (simple JSON)
+            // Extract fields
             String guestToken = extract(body, "guestToken");
+            String memberEmail = extract(body, "memberEmail");
             String itemId = extract(body, "itemId");
             String qtyStr = extract(body, "qty");
 
-            System.out.println("DEBUG extracted guestToken = [" + guestToken + "]");
-            System.out.println("DEBUG extracted itemId    = [" + itemId + "]");
-            System.out.println("DEBUG extracted qtyStr    = [" + qtyStr + "]");
+            System.out.println("DEBUG extracted guestToken  = [" + guestToken + "]");
+            System.out.println("DEBUG extracted memberEmail = [" + memberEmail + "]");
+            System.out.println("DEBUG extracted itemId      = [" + itemId + "]");
+            System.out.println("DEBUG extracted qtyStr      = [" + qtyStr + "]");
 
             int qty = Integer.parseInt(qtyStr);
 
@@ -48,8 +49,14 @@ public class AddToCartHandler implements HttpHandler {
                 return;
             }
 
-            // Add or update cart item
-            CartDAO.addOrUpdateCartItem(guestToken, itemId, qty);
+            // Route to correct DAO method
+            if (memberEmail != null && !memberEmail.isEmpty()) {
+                // MEMBER CART
+                CartDAO.addOrUpdateCartItemForMember(memberEmail, itemId, qty);
+            } else {
+                // GUEST CART
+                CartDAO.addOrUpdateCartItem(guestToken, itemId, qty);
+            }
 
             sendJson(exchange, 200, "{ \"status\": \"OK\" }");
 
@@ -69,18 +76,15 @@ public class AddToCartHandler implements HttpHandler {
 
         int valueStart = colon + 1;
 
-        // Skip whitespace
         while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
             valueStart++;
         }
 
-        // Quoted string
         if (json.charAt(valueStart) == '"') {
             int endQuote = json.indexOf("\"", valueStart + 1);
             return json.substring(valueStart + 1, endQuote);
         }
 
-        // Number (supports negative and decimals)
         int end = valueStart;
         while (end < json.length() &&
                 (Character.isDigit(json.charAt(end)) ||
@@ -91,7 +95,6 @@ public class AddToCartHandler implements HttpHandler {
 
         return json.substring(valueStart, end);
     }
-
 
     private void sendJson(HttpExchange ex, int status, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);

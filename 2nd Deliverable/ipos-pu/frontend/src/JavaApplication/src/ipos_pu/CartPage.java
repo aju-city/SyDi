@@ -6,6 +6,9 @@ package ipos_pu;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
@@ -114,9 +117,13 @@ public class CartPage extends javax.swing.JFrame {
 
 
     private void loadCartItemsFromBackend() {
+        boolean isGuest = "Guest".equals(username);
+        String identifier = isGuest ? CartManager.guestToken : username;
         try {
-            String token = CartManager.guestToken;
-            String urlStr = "http://localhost:8080/api/cart/get?guestToken=" + token;
+            String urlStr = isGuest
+                    ? "http://localhost:8080/api/cart/get?guestToken=" + identifier
+                    : "http://localhost:8080/api/cart/get?memberEmail=" + identifier;
+
 
             // --- 1. HTTP GET request ---
             java.net.URL url = new java.net.URL(urlStr);
@@ -440,16 +447,18 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
-    private void sendQtyUpdateToBackend(String token, String itemId, int delta) throws Exception {
-        String json = "[{\"guestToken\":\"" + token + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}]";
+    private void sendQtyUpdateToBackend(String identifier, String itemId, int delta, boolean isGuest) throws Exception {
+        String json = isGuest
+                ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}"
+                : "{\"memberEmail\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}";
 
-        java.net.URL url = new java.net.URL("http://localhost:8080/api/cart/add");
-        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+        URL url = new URL("http://localhost:8080/api/cart/add");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
 
-        try (java.io.OutputStream os = conn.getOutputStream()) {
+        try (OutputStream os = conn.getOutputStream()) {
             os.write(json.getBytes());
         }
 
@@ -458,16 +467,19 @@ public class CartPage extends javax.swing.JFrame {
         }
     }
 
-    private void sendRemoveToBackend(String token, String itemId) throws Exception {
-        String json = "[{\"guestToken\":\"" + token + "\",\"itemId\":\"" + itemId + "\"}]";
 
-        java.net.URL url = new java.net.URL("http://localhost:8080/api/cart/remove");
-        java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+    private void sendRemoveToBackend(String identifier, String itemId, boolean isGuest) throws Exception {
+        String json = isGuest
+                ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\"}"
+                : "{\"memberEmail\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\"}";
+
+        URL url = new URL("http://localhost:8080/api/cart/remove");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
 
-        try (java.io.OutputStream os = conn.getOutputStream()) {
+        try (OutputStream os = conn.getOutputStream()) {
             os.write(json.getBytes());
         }
 
@@ -475,6 +487,7 @@ public class CartPage extends javax.swing.JFrame {
             throw new Exception("Failed to remove item");
         }
     }
+
 
 
     private JPanel buildDeliverySection() {
@@ -616,7 +629,44 @@ public class CartPage extends javax.swing.JFrame {
                 PromoManager.recordPurchase(activeP, totalQty);
                 PromoManager.setUserActivePromo(null);
             }
+
+
+            try {
+                boolean isGuest = guest; // you already have this variable
+                String identifier = isGuest ? CartManager.guestToken : CartManager.memberEmail;
+
+                String json = isGuest
+                        ? "{\"guestToken\":\"" + identifier + "\"}"
+                        : "{\"memberEmail\":\"" + identifier + "\"}";
+
+                URL url = new URL("http://localhost:8080/api/cart/clear");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                conn.getOutputStream().write(json.getBytes());
+                conn.getOutputStream().close();
+
+                if (conn.getResponseCode() != 200) {
+                    System.out.println("Failed to clear backend cart");
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+
             CartManager.clear();
+
+            if (guest) {
+                try {
+                    CartManager.guestToken = CartManager.createGuestCartOnBackend();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Could not create a new guest cart.");
+                }
+            }
+
             paymentCard.setVisible(false);
             successCard.setVisible(true);
             successCard.revalidate();
@@ -929,7 +979,10 @@ public class CartPage extends javax.swing.JFrame {
                 if (row < 0) return;
 
                 String itemId = cartModel.getValueAt(row, 0).toString();
-                String token = CartManager.guestToken;
+
+                // guest vs member (computed once)
+                boolean isGuest = "Guest".equals(username);
+                String identifier = isGuest ? CartManager.guestToken : username;
 
                 if (col == 3) {
                     Rectangle cellRect = table.getCellRect(row, col, false);
@@ -941,7 +994,7 @@ public class CartPage extends javax.swing.JFrame {
                     int delta = isPlus ? 1 : -1;
 
                     try {
-                        sendQtyUpdateToBackend(token, itemId, delta);
+                        sendQtyUpdateToBackend(identifier, itemId, delta, isGuest);
                         loadCartItemsFromBackend();
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -950,7 +1003,7 @@ public class CartPage extends javax.swing.JFrame {
 
                 else if (col == 5) {
                     try {
-                        sendRemoveToBackend(token, itemId);
+                        sendRemoveToBackend(identifier, itemId, isGuest);
                         loadCartItemsFromBackend();
                     } catch (Exception ex) {
                         JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -959,6 +1012,7 @@ public class CartPage extends javax.swing.JFrame {
             }
         });
     }
+
 
     private JTable findCartTable() {
         // Your cart table is always inside the first JScrollPane in the content

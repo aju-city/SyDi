@@ -338,6 +338,9 @@ public class LoginDialog extends javax.swing.JDialog {
                     return;
                 }
 
+                CartManager.memberEmail = username;
+                CartManager.guestToken = null;
+
                 // Normal member login → go to HomePage
                 java.awt.Window owner = getOwner();
                 this.dispose();

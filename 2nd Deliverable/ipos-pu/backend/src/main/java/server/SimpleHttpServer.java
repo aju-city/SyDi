@@ -31,6 +31,9 @@ public class SimpleHttpServer {
 
         server.createContext("/api/catalogue", new CatalogueController());
 
+        server.createContext("/api/cart/clear", new ClearCartHandler());
+
+
 
         server.setExecutor(null); // default executor
         server.start();

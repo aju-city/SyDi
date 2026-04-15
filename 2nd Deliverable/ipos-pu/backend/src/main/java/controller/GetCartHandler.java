@@ -18,19 +18,38 @@ public class GetCartHandler implements HttpHandler {
         }
 
         try {
-            // Extract guestToken from query string
             String query = exchange.getRequestURI().getQuery();
-            if (query == null || !query.contains("guestToken=")) {
-                sendJson(exchange, 400, "{ \"error\": \"Missing guestToken\" }");
+            if (query == null) {
+                sendJson(exchange, 400, "{ \"error\": \"Missing query parameters\" }");
                 return;
             }
 
-            String guestToken = query.split("guestToken=")[1];
+            // Extract guestToken or memberEmail
+            String guestToken = null;
+            String memberEmail = null;
 
-            // Fetch items from DB
-            List<CartDAO.CartItemView> items = CartDAO.getCartItems(guestToken);
+            if (query.contains("guestToken=")) {
+                guestToken = query.split("guestToken=")[1];
+            }
+            if (query.contains("memberEmail=")) {
+                memberEmail = query.split("memberEmail=")[1];
+            }
 
-            // Build JSON manually
+            if (guestToken == null && memberEmail == null) {
+                sendJson(exchange, 400, "{ \"error\": \"Missing guestToken or memberEmail\" }");
+                return;
+            }
+
+            // Fetch items
+            List<CartDAO.CartItemView> items;
+
+            if (memberEmail != null) {
+                items = CartDAO.getCartItemsForMember(memberEmail);
+            } else {
+                items = CartDAO.getCartItems(guestToken);
+            }
+
+            // Build JSON
             StringBuilder json = new StringBuilder();
             json.append("{ \"items\": [");
 
@@ -38,7 +57,7 @@ public class GetCartHandler implements HttpHandler {
                 CartDAO.CartItemView it = items.get(i);
 
                 json.append("{")
-                        .append("\"itemId\":\"").append(it.itemId).append("\",")   // ✔ FIXED
+                        .append("\"itemId\":\"").append(it.itemId).append("\",")
                         .append("\"name\":\"").append(it.name).append("\",")
                         .append("\"price\":").append(it.price).append(",")
                         .append("\"qty\":").append(it.qty)
