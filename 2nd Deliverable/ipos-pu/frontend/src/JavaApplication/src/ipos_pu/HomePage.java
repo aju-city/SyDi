@@ -467,7 +467,7 @@ public class HomePage extends javax.swing.JFrame {
         try (java.sql.Connection con = DBConnection.getConnection();
              java.sql.Statement st = con.createStatement();
              java.sql.ResultSet rs = st.executeQuery(
-                 "SELECT name, description, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
+                 "SELECT name, description, package_type, unit, units_per_pack, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
             while (rs.next()) {
                 int qty = rs.getInt("quantity");
                 int lim = rs.getInt("stock_limit");
@@ -481,6 +481,9 @@ public class HomePage extends javax.swing.JFrame {
                 rows.add(new Object[]{
                     name,
                     rs.getString("description"),
+                    rs.getString("package_type"),
+                    rs.getString("unit"),
+                    rs.getInt("units_per_pack"),
                     String.format("\u00a3%.2f", rs.getDouble("price")),
                     status,
                     "ADD"
@@ -495,8 +498,8 @@ public class HomePage extends javax.swing.JFrame {
     }
 
     private void buildProductTable() {
-        // columns: name, description, price, stock status (colour coded), add button
-        String[] cols = {"NAME", "DESCRIPTION", "PRICE", "STOCK", ""};
+        // columns: name, description, package type, unit, units/pack, price, stock status (colour coded), add button
+        String[] cols = {"NAME", "DESCRIPTION", "PACKAGE TYPE", "UNIT", "UNITS/PACK", "PRICE", "STOCK", ""};
         loadProductsFromDB();
         productModel = new DefaultTableModel(allProductData, cols) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -522,13 +525,13 @@ public class HomePage extends javax.swing.JFrame {
         header.setReorderingAllowed(false);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 60)));
 
-        // stock is column 3 — colour rows red when no stock
+        // stock is column 6 — colour rows red when no stock
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 super.getTableCellRendererComponent(t, v, sel, foc, r, c);
-                String stock = t.getModel().getValueAt(r, 3) != null
-                    ? t.getModel().getValueAt(r, 3).toString() : "";
+                String stock = t.getModel().getValueAt(r, 6) != null
+                    ? t.getModel().getValueAt(r, 6).toString() : "";
                 boolean noStock  = "NO STOCK".equals(stock);
                 boolean atLimit  = "LIMIT".equals(stock);
                 boolean dimmed   = noStock || atLimit;
@@ -541,8 +544,8 @@ public class HomePage extends javax.swing.JFrame {
                 }
                 setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
                 if (sel) setBackground(new Color(37, 99, 168, 50));
-                // stock column is 3 — colour it green/amber/red/orange
-                if (c == 3) {
+                // stock column is 6 — colour it green/amber/red/orange
+                if (c == 6) {
                     if ("IN STOCK".equals(stock))   setForeground(new Color(0x4ade80));
                     if ("LOW STOCK".equals(stock))  setForeground(new Color(0xfbbf24));
                     if ("NO STOCK".equals(stock))   setForeground(new Color(0xf87171));
@@ -551,15 +554,15 @@ public class HomePage extends javax.swing.JFrame {
                 return this;
             }
         };
-        // apply to name, description, price, stock (cols 0-3)
-        for (int i = 0; i < 4; i++) {
+        // apply to name, description, package type, unit, units/pack, price, stock (cols 0-6)
+        for (int i = 0; i < 7; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
-        // price renderer — column 2, reads stock from col 3, applies per-item campaign discount
-        table.getColumnModel().getColumn(2).setCellRenderer((t, v, sel, foc, r, c) -> {
-            String stock = t.getModel().getValueAt(r, 3) != null
-                ? t.getModel().getValueAt(r, 3).toString() : "";
+        // price renderer — column 5, reads stock from col 6, applies per-item campaign discount
+        table.getColumnModel().getColumn(5).setCellRenderer((t, v, sel, foc, r, c) -> {
+            String stock = t.getModel().getValueAt(r, 6) != null
+                ? t.getModel().getValueAt(r, 6).toString() : "";
             boolean noStock = "NO STOCK".equals(stock) || "LIMIT".equals(stock);
             Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
             if (sel) bg = new Color(37, 99, 168, 50);
@@ -606,10 +609,10 @@ public class HomePage extends javax.swing.JFrame {
         });
 
 
-        // add button — column 4; OUT when no stock, LIMIT when customer hit order cap
-        table.getColumnModel().getColumn(4).setCellRenderer((t, v, sel, foc, r, c) -> {
-            String stock = t.getModel().getValueAt(r, 3) != null
-                ? t.getModel().getValueAt(r, 3).toString() : "";
+        // add button — column 7; OUT when no stock, LIMIT when customer hit order cap
+        table.getColumnModel().getColumn(7).setCellRenderer((t, v, sel, foc, r, c) -> {
+            String stock = t.getModel().getValueAt(r, 6) != null
+                ? t.getModel().getValueAt(r, 6).toString() : "";
             boolean noStock = "NO STOCK".equals(stock);
             boolean atLimit = "LIMIT".equals(stock);
             boolean blocked = noStock || atLimit;
@@ -625,28 +628,34 @@ public class HomePage extends javax.swing.JFrame {
             wrap.add(btn);
             return wrap;
         });
-        table.getColumnModel().getColumn(4).setPreferredWidth(90);
-        table.getColumnModel().getColumn(4).setMaxWidth(110);
+        table.getColumnModel().getColumn(7).setPreferredWidth(90);
+        table.getColumnModel().getColumn(7).setMaxWidth(110);
 
-        // pin the narrow columns so price/stock/add dont balloon out
+        // pin the narrow columns so package type / unit / units-per-pack / price / stock / add dont balloon
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
         table.getColumnModel().getColumn(2).setMaxWidth(140);
-        table.getColumnModel().getColumn(3).setPreferredWidth(110);
-        table.getColumnModel().getColumn(3).setMaxWidth(130);
+        table.getColumnModel().getColumn(3).setPreferredWidth(80);
+        table.getColumnModel().getColumn(3).setMaxWidth(100);
+        table.getColumnModel().getColumn(4).setPreferredWidth(80);
+        table.getColumnModel().getColumn(4).setMaxWidth(100);
+        table.getColumnModel().getColumn(5).setPreferredWidth(110);
+        table.getColumnModel().getColumn(5).setMaxWidth(140);
+        table.getColumnModel().getColumn(6).setPreferredWidth(110);
+        table.getColumnModel().getColumn(6).setMaxWidth(130);
 
-        // clicking the add button (column 4) adds item to cart, enforces stock limit,
+        // clicking the add button (column 7) adds item to cart, enforces stock limit,
         // then refreshes stock status colours across the whole table
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 int row = table.rowAtPoint(e.getPoint());
-                if (col == 4 && row >= 0) {
-                    Object stockVal = productModel.getValueAt(row, 3);
+                if (col == 7 && row >= 0) {
+                    Object stockVal = productModel.getValueAt(row, 6);
                     String stockStr = stockVal != null ? stockVal.toString() : "";
                     // block if no stock or customer already hit the per-order limit
                     if (!"NO STOCK".equals(stockStr) && !"LIMIT".equals(stockStr)) {
                         String prodName  = productModel.getValueAt(row, 0).toString();
-                        String priceStr  = productModel.getValueAt(row, 2).toString()
+                        String priceStr  = productModel.getValueAt(row, 5).toString()
                                                .replace("\u00a3", "").trim();
                         // extra safety check: cart qty must be under the stock_limit cap
                         int limitQty = stockLimitMap.getOrDefault(prodName, Integer.MAX_VALUE);
@@ -671,7 +680,7 @@ public class HomePage extends javax.swing.JFrame {
 
                         // recompute stock status for every row so colours update live
                         for (Object[] dataRow : allProductData) {
-                            dataRow[3] = computeStockStatus(dataRow[0].toString());
+                            dataRow[6] = computeStockStatus(dataRow[0].toString());
                         }
                         filterTable(); // repopulates the model with new statuses
 
