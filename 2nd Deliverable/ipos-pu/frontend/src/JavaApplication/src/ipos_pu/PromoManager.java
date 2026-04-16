@@ -36,36 +36,97 @@ public class PromoManager {
     }
 
     private static final List<Campaign> campaigns = new ArrayList<>();
+    private static boolean loadedOnce = false;
 
     // which campaign the current storefront user has applied (cart reads this on checkout)
     private static String userActiveCampaignId = null;
 
+    public static void refreshFromBackend() {
+        try {
+            campaigns.clear();
+            campaigns.addAll(PromotionApiClient.listAllCampaigns());
+            // hydrate item discounts for richer UI display
+            for (Campaign c : campaigns) {
+                try {
+                    c.itemDiscounts.clear();
+                    c.itemDiscounts.putAll(PromotionApiClient.getCampaignItemDiscountsByName(c.id));
+                } catch (Exception ignored) {}
+            }
+            loadedOnce = true;
+        } catch (Exception ignored) {
+            // if backend down, keep whatever is already in memory
+        }
+    }
+
     // returns a snapshot of all campaigns (active and inactive)
     public static List<Campaign> getCampaigns() {
+        if (!loadedOnce) refreshFromBackend();
         return new ArrayList<>(campaigns);
     }
 
     // returns only campaigns with status ACTIVE
     public static List<Campaign> getActiveCampaigns() {
-        List<Campaign> active = new ArrayList<>();
-        for (Campaign c : campaigns)
-            if ("ACTIVE".equals(c.status)) active.add(c);
-        return active;
+        try {
+            List<Campaign> active = PromotionApiClient.listActiveCampaigns();
+            // hydrate item discounts for cards/banner
+            for (Campaign c : active) {
+                try {
+                    c.itemDiscounts.clear();
+                    c.itemDiscounts.putAll(PromotionApiClient.getCampaignItemDiscountsByName(c.id));
+                } catch (Exception ignored) {}
+            }
+            return active;
+        } catch (Exception ignored) {
+            // fallback to cached list
+            List<Campaign> active = new ArrayList<>();
+            for (Campaign c : getCampaigns())
+                if ("ACTIVE".equals(c.status)) active.add(c);
+            return active;
+        }
     }
 
     // finds a campaign by id, returns null if not found
     public static Campaign getCampaign(String id) {
         if (id == null) return null;
-        for (Campaign c : campaigns)
-            if (c.id.equals(id)) return c;
+        for (Campaign c : getCampaigns()) {
+            if (c.id.equals(id)) {
+                if (c.itemDiscounts.isEmpty()) {
+                    try { c.itemDiscounts.putAll(PromotionApiClient.getCampaignItemDiscountsByName(c.id)); }
+                    catch (Exception ignored) {}
+                }
+                return c;
+            }
+        }
         return null;
     }
 
-    public static void addCampaign(Campaign c)    { campaigns.add(c); }
-    public static void removeCampaign(String id)  { campaigns.removeIf(c -> c.id.equals(id)); }
-
-    // generates a simple unique id using the current timestamp
-    public static String generateId() { return "C_" + System.currentTimeMillis(); }
+    // AdminPage previously used in-memory add/remove. Now these call backend.
+    public static void addCampaign(Campaign c) {
+        try {
+            String id = PromotionApiClient.createCampaign(c.name, c.startDate, c.endDate, "admin");
+            if (id != null) c.id = id;
+            // Note: campaign items are managed by AdminPage directly using productIds.
+            refreshFromBackend();
+        } catch (Exception ignored) {}
+    }
+    public static void removeCampaign(String id) {
+        try {
+            PromotionApiClient.deleteCampaign(id);
+            refreshFromBackend();
+        } catch (Exception ignored) {}
+    }
+    public static void terminateCampaign(String id) {
+        try {
+            PromotionApiClient.terminateCampaign(id);
+            refreshFromBackend();
+        } catch (Exception ignored) {}
+    }
+    public static void updateCampaign(Campaign c) {
+        try {
+            PromotionApiClient.updateCampaign(c.id, c.name, c.startDate, c.endDate);
+            refreshFromBackend();
+        } catch (Exception ignored) {}
+    }
 
     // bump the hit counter when user opens this campaign on the storefront
     public static void recordHit(String id) {

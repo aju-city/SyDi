@@ -23,13 +23,19 @@ public class PromotionCampaignDAO {
     public void createCampaign(PromotionCampaign campaign) throws SQLException {
         String sql = "INSERT INTO PromotionCampaign (campaign_name, start_datetime, end_datetime, status, created_by) VALUES (?, ?, ?, ?, ?)";
 
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, campaign.getCampaignName());
             stmt.setTimestamp(2, campaign.getStartDatetime());
             stmt.setTimestamp(3, campaign.getEndDatetime());
             stmt.setString(4, campaign.getStatus());
             stmt.setString(5, campaign.getCreatedBy());
             stmt.executeUpdate();
+
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    campaign.setCampaignId(keys.getInt(1));
+                }
+            }
         }
     }
 
@@ -68,6 +74,46 @@ public class PromotionCampaignDAO {
         }
 
         return campaigns;
+    }
+
+    /**
+     * Retrieves only campaigns that are active now (by time window) and not terminated.
+     * This does not mutate DB status; callers can display computed status if needed.
+     */
+    public List<PromotionCampaign> getActiveCampaigns(Timestamp now) throws SQLException {
+        List<PromotionCampaign> campaigns = new ArrayList<>();
+        String sql =
+                "SELECT * FROM PromotionCampaign " +
+                "WHERE status <> 'TERMINATED' " +
+                "AND start_datetime <= ? AND end_datetime >= ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setTimestamp(1, now);
+            stmt.setTimestamp(2, now);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    PromotionCampaign c = mapResultSetToCampaign(rs);
+                    // Present as ACTIVE in responses when in-window
+                    c.setStatus("ACTIVE");
+                    campaigns.add(c);
+                }
+            }
+        }
+        return campaigns;
+    }
+
+    /**
+     * Updates campaign name and date range.
+     */
+    public void updateCampaign(int campaignId, String campaignName, Timestamp startDatetime, Timestamp endDatetime) throws SQLException {
+        String sql = "UPDATE PromotionCampaign SET campaign_name = ?, start_datetime = ?, end_datetime = ? WHERE campaign_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, campaignName);
+            stmt.setTimestamp(2, startDatetime);
+            stmt.setTimestamp(3, endDatetime);
+            stmt.setInt(4, campaignId);
+            stmt.executeUpdate();
+        }
     }
 
     /**

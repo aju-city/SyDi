@@ -35,6 +35,18 @@ public class SimpleHttpServer {
 
         server.createContext("/api/order/validateStock", new ValidateCartStockHandler());
 
+        // Promotions (Functionality 15)
+        server.createContext("/api/promotions/campaign/create", new AdminPromotionCreateHandler());
+        server.createContext("/api/promotions/campaign/add-item", new AdminPromotionAddItemHandler());
+        server.createContext("/api/promotions/campaign/update", new AdminPromotionUpdateCampaignHandler());
+        server.createContext("/api/promotions/campaign/update-item", new AdminPromotionUpdateItemHandler());
+        server.createContext("/api/promotions/campaign/delete", new AdminPromotionDeleteHandler());
+        server.createContext("/api/promotions/campaign/terminate", new AdminPromotionTerminateHandler());
+        server.createContext("/api/promotions/campaign/all", new AdminPromotionListAllHandler());
+        server.createContext("/api/promotions/campaign/items", new AdminPromotionListItemsHandler());
+
+        server.createContext("/api/promotions/active", new PromotionsActiveHandler());
+        server.createContext("/api/promotions/products", new PromotionProductsHandler());
 
         server.setExecutor(null); // default executor
         server.start();

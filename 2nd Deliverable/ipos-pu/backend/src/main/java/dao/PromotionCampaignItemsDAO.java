@@ -71,6 +71,53 @@ public class PromotionCampaignItemsDAO {
     }
 
     /**
+     * Inserts or updates a campaign item discount for (campaign_id, product_id).
+     */
+    public void upsertCampaignItem(int campaignId, String productId, double discountRate) throws SQLException {
+        String sql =
+                "INSERT INTO PromotionCampaignItems (campaign_id, product_id, discount_rate) " +
+                "VALUES (?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE discount_rate = VALUES(discount_rate)";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, campaignId);
+            stmt.setString(2, productId);
+            stmt.setDouble(3, discountRate);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Returns campaign items joined with product details from ipos_ca.
+     * Columns: product_id, discount_rate, name, description, price
+     */
+    public List<java.util.Map<String, Object>> getCampaignProductsWithDiscount(int campaignId) throws SQLException {
+        List<java.util.Map<String, Object>> out = new ArrayList<>();
+        String sql =
+                "SELECT pci.product_id, pci.discount_rate, si.name, si.description, si.price " +
+                "FROM PromotionCampaignItems pci " +
+                "JOIN ipos_ca.stock_items si ON si.item_id = pci.product_id " +
+                "WHERE pci.campaign_id = ? " +
+                "ORDER BY si.name";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, campaignId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("productId", rs.getString("product_id"));
+                    m.put("discountRate", rs.getDouble("discount_rate"));
+                    m.put("name", rs.getString("name"));
+                    m.put("description", rs.getString("description"));
+                    m.put("price", rs.getDouble("price"));
+                    out.add(m);
+                }
+            }
+        }
+        return out;
+    }
+
+    /**
      * Updates the discount rate of a campaign item.
      */
     public void updateDiscountRate(int campaignItemId, double discountRate) throws SQLException {

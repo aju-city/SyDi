@@ -562,7 +562,8 @@ public class HomePage extends javax.swing.JFrame {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
-        // price renderer — column 6, reads stock from col 7, applies per-item campaign discount
+        // price renderer — column 6
+        // IMPORTANT: catalogue must show base price (no promo discount).
         table.getColumnModel().getColumn(6).setCellRenderer((t, v, sel, foc, r, c) -> {
             String stock = t.getModel().getValueAt(r, 7) != null
                     ? t.getModel().getValueAt(r, 7).toString() : "";
@@ -570,15 +571,8 @@ public class HomePage extends javax.swing.JFrame {
             Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
             if (sel) bg = new Color(37, 99, 168, 50);
 
-            // look up per-item discount for this specific product from the active campaign
-            String prodName = t.getModel().getValueAt(r, 1) != null
-                    ? t.getModel().getValueAt(r, 1).toString() : "";
-            PromoManager.Campaign activeCamp = PromoManager.getCampaign(activePromo);
-            double discountRate = activeCamp != null
-                    ? PromoManager.getItemDiscountRate(activePromo, prodName) : 1.0;
-            boolean promoApplies  = discountRate < 1.0 && !noStock;
             boolean loyaltyApplies = OrderManager.isLoyaltyOrder() && !noStock;
-            boolean applyDiscount = promoApplies || loyaltyApplies;
+            boolean applyDiscount = loyaltyApplies;
             JPanel cell = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 16, 0));
             cell.setOpaque(true);
             cell.setBackground(bg);
@@ -587,7 +581,7 @@ public class HomePage extends javax.swing.JFrame {
                 String orig = v != null ? v.toString() : "";
                 try {
                     double price = Double.parseDouble(orig.replace("£", ""));
-                    double rate  = (promoApplies ? discountRate : 1.0) * (loyaltyApplies ? 0.9 : 1.0);
+                    double rate  = (loyaltyApplies ? 0.9 : 1.0);
                     double disc  = Math.round(price * rate * 100.0) / 100.0;
                     JLabel discLbl = new JLabel(String.format("£%.2f", disc));
                     discLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -679,25 +673,15 @@ public class HomePage extends javax.swing.JFrame {
                         try {
                             double unitPrice = Double.parseDouble(priceStr);
 
-                            double itemRate = PromoManager.getItemDiscountRate(activePromo, prodName);
-                            if (itemRate < 1.0) {
-                                unitPrice = Math.round(unitPrice * itemRate * 100.0) / 100.0;
-                            }
+                            // promo discount is NOT applied to catalogue/cart pricing (only shown in promo views/details)
 
                             if (OrderManager.isLoyaltyOrder()) {
                                 unitPrice = Math.round(unitPrice * 0.9 * 100.0) / 100.0;
                             }
 
-                            String itemId = productModel.getValueAt(row, 0).toString();
-                            CartManager.addItem(itemId, 1);
+                            String category = productModel.getValueAt(row, 3).toString(); // PACKAGE TYPE
+                            CartManager.addItem(prodName, category, unitPrice, 1, limitQty);
 
-                        } catch (java.io.IOException ex) {
-                            JOptionPane.showMessageDialog(
-                                    HomePage.this,
-                                    "Failed to add item to cart.",
-                                    "Error",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
                         } catch (NumberFormatException ignored) {}
 
                         // recompute stock status for every row so colours update live

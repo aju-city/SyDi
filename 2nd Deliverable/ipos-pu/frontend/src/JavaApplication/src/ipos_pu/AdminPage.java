@@ -40,6 +40,8 @@ public class AdminPage extends javax.swing.JFrame {
 
     // item names loaded from db for the campaign form dropdowns
     private List<String> itemNames = new ArrayList<>();
+    // item name -> product_id (ipos_ca.stock_items.item_id)
+    private final java.util.Map<String, String> itemNameToId = new java.util.HashMap<>();
 
     public AdminPage() {
         initComponents();
@@ -85,8 +87,16 @@ public class AdminPage extends javax.swing.JFrame {
         List<String> names = new ArrayList<>();
         try (java.sql.Connection con = DBConnection.getConnection();
              java.sql.Statement st = con.createStatement();
-             java.sql.ResultSet rs = st.executeQuery("SELECT name FROM ipos_ca.stock_items ORDER BY name")) {
-            while (rs.next()) names.add(rs.getString("name"));
+             java.sql.ResultSet rs = st.executeQuery("SELECT item_id, name FROM ipos_ca.stock_items ORDER BY name")) {
+            itemNameToId.clear();
+            while (rs.next()) {
+                String id = rs.getString("item_id");
+                String n = rs.getString("name");
+                if (n != null) {
+                    names.add(n);
+                    itemNameToId.put(n, id);
+                }
+            }
         } catch (java.sql.SQLException ex) {
             // db might not be available, form will show empty dropdown
         }
@@ -491,18 +501,63 @@ public class AdminPage extends javax.swing.JFrame {
 
             if (editCampaign == null) {
                 // create new campaign
-                PromoManager.Campaign c = new PromoManager.Campaign(
-                    PromoManager.generateId(), cName, sd, ed, status);
-                c.itemDiscounts.putAll(discounts);
-                PromoManager.addCampaign(c);
+                try {
+                    PromoManager.Campaign c = new PromoManager.Campaign("",
+                            cName,
+                            sd != null ? sd : java.time.LocalDate.now(),
+                            ed != null ? ed : java.time.LocalDate.now().plusDays(7),
+                            status);
+                    // create campaign in backend
+                    c.id = PromotionApiClient.createCampaign(c.name, c.startDate, c.endDate, "admin");
+
+                    // upsert campaign items in backend using product ids
+                    for (java.util.Map.Entry<String, Double> entry : discounts.entrySet()) {
+                        String itemName = entry.getKey();
+                        String productId = itemNameToId.get(itemName);
+                        if (productId == null) continue;
+                        PromotionApiClient.upsertCampaignItem(c.id, productId, entry.getValue());
+                    }
+
+                    if ("TERMINATED".equals(status)) {
+                        PromotionApiClient.terminateCampaign(c.id);
+                    }
+
+                    PromoManager.refreshFromBackend();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(AdminPage.this,
+                            "Failed to create campaign: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             } else {
                 // update existing campaign in place
-                editCampaign.name      = cName;
-                editCampaign.startDate = sd;
-                editCampaign.endDate   = ed;
-                editCampaign.status    = status;
-                editCampaign.itemDiscounts.clear();
-                editCampaign.itemDiscounts.putAll(discounts);
+                try {
+                    editCampaign.name = cName;
+                    editCampaign.startDate = sd != null ? sd : editCampaign.startDate;
+                    editCampaign.endDate = ed != null ? ed : editCampaign.endDate;
+
+                    PromotionApiClient.updateCampaign(editCampaign.id, editCampaign.name,
+                            editCampaign.startDate, editCampaign.endDate);
+
+                    // upsert all discounts from UI
+                    for (java.util.Map.Entry<String, Double> entry : discounts.entrySet()) {
+                        String itemName = entry.getKey();
+                        String productId = itemNameToId.get(itemName);
+                        if (productId == null) continue;
+                        PromotionApiClient.upsertCampaignItem(editCampaign.id, productId, entry.getValue());
+                    }
+
+                    if ("TERMINATED".equals(status)) {
+                        PromotionApiClient.terminateCampaign(editCampaign.id);
+                    }
+
+                    PromoManager.refreshFromBackend();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(AdminPage.this,
+                            "Failed to update campaign: " + ex.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
 
             // hide form and refresh the list
@@ -642,7 +697,9 @@ public class AdminPage extends javax.swing.JFrame {
                 "Delete campaign \"" + c.name + "\"? This cannot be undone.",
                 "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (res == JOptionPane.YES_OPTION) {
-                PromoManager.removeCampaign(c.id);
+                try {
+                    PromoManager.removeCampaign(c.id);
+                } catch (Exception ignored) {}
                 // rebuild list directly
                 listPanel.removeAll();
                 List<PromoManager.Campaign> all = PromoManager.getCampaigns();
