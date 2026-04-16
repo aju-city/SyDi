@@ -1,5 +1,6 @@
 package dao;
 
+import db.DatabaseConnection;
 import model.NonCommercialMember;
 
 import java.sql.*;
@@ -182,6 +183,23 @@ public class NonCommercialMemberDAO {
             }
         }
         return list;
+    }
+
+    public static int getTotalOrders(String email) throws Exception {
+        String sql = "SELECT TotalOrders FROM ipos_pu.NonCommercialMember WHERE Email = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("TotalOrders");
+            }
+
+            return 0; // default if somehow not found
+        }
     }
 
     /**

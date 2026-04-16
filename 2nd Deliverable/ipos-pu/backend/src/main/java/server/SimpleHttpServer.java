@@ -33,8 +33,7 @@ public class SimpleHttpServer {
 
         server.createContext("/api/cart/clear", new ClearCartHandler());
 
-        server.createContext("/api/activity/log", new LogActivityHandler());
-
+        server.createContext("/api/order/validateStock", new ValidateCartStockHandler());
 
 
         server.setExecutor(null); // default executor
