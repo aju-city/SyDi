@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import dao.PromotionCampaignItemsDAO;
 import db.DatabaseConnection;
+import model.PromotionCampaignItems;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -40,16 +41,34 @@ public class AdminPromotionUpdateItemHandler implements HttpHandler {
         try (Connection conn = DatabaseConnection.getConnection()) {
             if (conn == null) throw new IllegalStateException("No DB connection");
             PromotionCampaignItemsDAO dao = new PromotionCampaignItemsDAO(conn);
-            if (dao.getCampaignItemById(campaignItemId) == null) {
+            PromotionCampaignItems existing = dao.getCampaignItemById(campaignItemId);
+            if (existing == null) {
                 JsonResponseUtil.sendJson(exchange, 404, "{ \"error\": \"Campaign item not found\" }");
                 return;
             }
+
+            PromotionCampaignItemsDAO.DiscountConflict conflict =
+                    dao.findDifferentDiscountInOverlappingCampaigns(existing.getCampaignId(), existing.getProductId(), discountRate);
+            if (conflict != null) {
+                String msg = "Product already has " + conflict.existingDiscountRate + "% in overlapping campaign #"
+                        + conflict.otherCampaignId + " (" + conflict.otherCampaignName + "). "
+                        + "Use " + conflict.existingDiscountRate + "% to match, or remove the product from the other campaign.";
+                JsonResponseUtil.sendJson(exchange, 409,
+                        "{ \"error\": \"PROMO_CONFLICT\", \"message\": \"" + escape(msg) + "\" }");
+                return;
+            }
+
             dao.updateDiscountRate(campaignItemId, discountRate);
             JsonResponseUtil.sendJson(exchange, 200, "{ \"status\": \"OK\" }");
         } catch (Exception e) {
             e.printStackTrace();
             JsonResponseUtil.sendJson(exchange, 500, "{ \"error\": \"Failed to update campaign item\" }");
         }
+    }
+
+    private String escape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
 

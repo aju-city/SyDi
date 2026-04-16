@@ -76,6 +76,17 @@ public class AdminPromotionAddItemHandler implements HttpHandler {
             }
 
             PromotionCampaignItemsDAO itemsDao = new PromotionCampaignItemsDAO(conn);
+            // Conflict rule (Functionality 16): if overlapping campaign has different discount for same product, reject.
+            PromotionCampaignItemsDAO.DiscountConflict conflict =
+                    itemsDao.findDifferentDiscountInOverlappingCampaigns(campaignId, productId.trim(), discountRate);
+            if (conflict != null) {
+                String msg = "Product already has " + conflict.existingDiscountRate + "% in overlapping campaign #"
+                        + conflict.otherCampaignId + " (" + conflict.otherCampaignName + "). "
+                        + "Use " + conflict.existingDiscountRate + "% to match, or remove the product from the other campaign.";
+                JsonResponseUtil.sendJson(exchange, 409,
+                        "{ \"error\": \"PROMO_CONFLICT\", \"message\": \"" + escape(msg) + "\" }");
+                return;
+            }
             itemsDao.upsertCampaignItem(campaignId, productId.trim(), discountRate);
 
             JsonResponseUtil.sendJson(exchange, 200, "{ \"status\": \"OK\" }");
@@ -83,6 +94,11 @@ public class AdminPromotionAddItemHandler implements HttpHandler {
             e.printStackTrace();
             JsonResponseUtil.sendJson(exchange, 500, "{ \"error\": \"Failed to add campaign item\" }");
         }
+    }
+
+    private String escape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
 

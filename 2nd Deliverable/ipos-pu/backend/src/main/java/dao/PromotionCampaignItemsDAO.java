@@ -17,6 +17,18 @@ public class PromotionCampaignItemsDAO {
         this.connection = connection;
     }
 
+    public static class DiscountConflict {
+        public final int otherCampaignId;
+        public final String otherCampaignName;
+        public final double existingDiscountRate;
+
+        public DiscountConflict(int otherCampaignId, String otherCampaignName, double existingDiscountRate) {
+            this.otherCampaignId = otherCampaignId;
+            this.otherCampaignName = otherCampaignName;
+            this.existingDiscountRate = existingDiscountRate;
+        }
+    }
+
     /**
      * Creates a new promotion campaign item.
      */
@@ -68,6 +80,63 @@ public class PromotionCampaignItemsDAO {
         }
 
         return items;
+    }
+
+    /**
+     * Conflict rule (Functionality 16):
+     * If the same product exists in another campaign whose time window overlaps with the given campaign,
+     * the discount rate must match. If different, returns conflict details; otherwise returns null.
+     *
+     * Overlap rule: other.start <= this.end AND other.end >= this.start
+     * Ignores campaigns with status TERMINATED.
+     */
+    public DiscountConflict findDifferentDiscountInOverlappingCampaigns(
+            int campaignId,
+            String productId,
+            double newDiscountRate
+    ) throws SQLException {
+        if (productId == null) return null;
+
+        Timestamp thisStart;
+        Timestamp thisEnd;
+        String campaignSql = "SELECT start_datetime, end_datetime FROM PromotionCampaign WHERE campaign_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(campaignSql)) {
+            stmt.setInt(1, campaignId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) return null; // campaign missing handled by caller
+                thisStart = rs.getTimestamp("start_datetime");
+                thisEnd = rs.getTimestamp("end_datetime");
+            }
+        }
+
+        String sql =
+                "SELECT pc.campaign_id, pc.campaign_name, pci.discount_rate " +
+                "FROM PromotionCampaignItems pci " +
+                "JOIN PromotionCampaign pc ON pc.campaign_id = pci.campaign_id " +
+                "WHERE pci.product_id = ? " +
+                "AND pci.campaign_id <> ? " +
+                "AND pc.status <> 'TERMINATED' " +
+                "AND pc.start_datetime <= ? AND pc.end_datetime >= ? " +
+                "AND pci.discount_rate <> ? " +
+                "LIMIT 1";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, productId);
+            stmt.setInt(2, campaignId);
+            stmt.setTimestamp(3, thisEnd);
+            stmt.setTimestamp(4, thisStart);
+            stmt.setDouble(5, newDiscountRate);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new DiscountConflict(
+                            rs.getInt("campaign_id"),
+                            rs.getString("campaign_name"),
+                            rs.getDouble("discount_rate")
+                    );
+                }
+            }
+        }
+        return null;
     }
 
     /**
