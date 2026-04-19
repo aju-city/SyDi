@@ -8,6 +8,16 @@ import java.awt.*;
 import java.awt.geom.*;
 import javax.swing.*;
 import java.util.List;
+import dao.OrdersDAO;
+import dao.OrderItemsDAO;
+import db.DatabaseConnection;
+import model.Orders;
+import model.OrderItems;
+
+import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -28,6 +38,16 @@ public class MyOrdersPage extends javax.swing.JFrame {
         this.username = username;
         initComponents();
         buildUI();
+    }
+
+    private static class OrderWithItems {
+        Orders order;
+        List<OrderItems> items;
+
+        OrderWithItems(Orders order, List<OrderItems> items) {
+            this.order = order;
+            this.items = items;
+        }
     }
 
     private void buildUI() {
@@ -89,7 +109,6 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return nav;
     }
 
-    // loads orders from the manager and shows them in a table or the empty state
     private JScrollPane buildContent() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -106,7 +125,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         titleLbl.setForeground(Color.WHITE);
         titleLbl.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel descLbl = new JLabel("All orders placed during this session.");
+        JLabel descLbl = new JLabel("All orders saved to your account.");
         descLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         descLbl.setForeground(new Color(255, 255, 255, 80));
         descLbl.setAlignmentX(LEFT_ALIGNMENT);
@@ -118,7 +137,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         outer.add(descLbl);
         outer.add(Box.createVerticalStrut(24));
 
-        List<OrderManager.Order> orders = OrderManager.getOrders();
+        List<OrderWithItems> orders = loadOrdersFromDatabase();
 
         if (orders.isEmpty()) {
             outer.add(buildEmptyState());
@@ -157,7 +176,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         msg.setForeground(new Color(255, 255, 255, 80));
         msg.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel hint = new JLabel("Orders you place this session will appear here");
+        JLabel hint = new JLabel("Orders saved to your account will appear here");
         hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         hint.setForeground(new Color(255, 255, 255, 45));
         hint.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -171,8 +190,7 @@ public class MyOrdersPage extends javax.swing.JFrame {
         return empty;
     }
 
-    // builds the orders table with a header row and one row per order
-    private JPanel buildOrderTable(List<OrderManager.Order> orders) {
+    private JPanel buildOrderTable(List<OrderWithItems> orders) {
         JPanel wrapper = new JPanel();
         wrapper.setOpaque(false);
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
@@ -183,8 +201,8 @@ public class MyOrdersPage extends javax.swing.JFrame {
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         header.setAlignmentX(LEFT_ALIGNMENT);
         header.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 60)),
-            BorderFactory.createEmptyBorder(0, 16, 0, 16)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 60)),
+                BorderFactory.createEmptyBorder(0, 16, 0, 16)
         ));
 
         for (String col : new String[]{"ORDER ID", "DATE", "ITEMS", "TOTAL", "STATUS"}) {
@@ -197,28 +215,42 @@ public class MyOrdersPage extends javax.swing.JFrame {
 
         wrapper.add(header);
 
-        String[] stageNames = { "Received", "Dispatched", "Delivered" };
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
 
         for (int i = 0; i < orders.size(); i++) {
-            OrderManager.Order o = orders.get(i);
+            OrderWithItems entry = orders.get(i);
+            Orders o = entry.order;
+            List<OrderItems> items = entry.items;
+
             Color rowBg = i % 2 == 0 ? PANEL : new Color(0x0a1018);
 
             JPanel row = new JPanel(new GridLayout(1, 5, 0, 0));
             row.setBackground(rowBg);
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 56));
             row.setAlignmentX(LEFT_ALIGNMENT);
 
-            // status column colour changes based on how far along the order is
-            String stageName  = stageNames[Math.min(o.stage, stageNames.length - 1)];
-            Color  stageColor = o.stage == 2 ? GREEN : (o.stage == 1 ? NEON_LT : new Color(255, 255, 255, 160));
+            String orderId = "ORD-" + o.getOrderId();
+            String date = o.getOrderDate() != null ? sdf.format(o.getOrderDate()) : "—";
+            String itemsSummary = buildItemsSummary(items);
+            String total = o.getTotalAmount() != null ? "£" + o.getTotalAmount().toString() : "£0.00";
+            String status = o.getStatus() != null ? o.getStatus() : "—";
 
-            String[] cells = { o.orderId, o.date, o.itemsSummary, o.total, stageName };
+            Color statusColor;
+            if ("Delivered".equalsIgnoreCase(status)) {
+                statusColor = GREEN;
+            } else if ("Dispatched".equalsIgnoreCase(status) || "Out for Delivery".equalsIgnoreCase(status)) {
+                statusColor = NEON_LT;
+            } else {
+                statusColor = new Color(255, 255, 255, 160);
+            }
+
+            String[] cells = { orderId, date, itemsSummary, total, status };
 
             for (int c = 0; c < cells.length; c++) {
                 JLabel cell = new JLabel(
-                    "<html><div style='width:160px;overflow:hidden'>" + cells[c] + "</div></html>");
+                        "<html><div style='width:180px;overflow:hidden'>" + cells[c] + "</div></html>");
                 cell.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                cell.setForeground(c == 4 ? stageColor : new Color(255, 255, 255, 190));
+                cell.setForeground(c == 4 ? statusColor : new Color(255, 255, 255, 190));
                 cell.setBackground(rowBg);
                 cell.setOpaque(true);
                 cell.setBorder(BorderFactory.createEmptyBorder(0, 24, 0, 8));
@@ -228,7 +260,6 @@ public class MyOrdersPage extends javax.swing.JFrame {
             wrapper.add(row);
         }
 
-        // thin line at the bottom of the table
         JPanel border = new JPanel();
         border.setBackground(new Color(37, 99, 168, 40));
         border.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
@@ -236,6 +267,26 @@ public class MyOrdersPage extends javax.swing.JFrame {
         wrapper.add(border);
 
         return wrapper;
+    }
+
+    private String buildItemsSummary(List<OrderItems> items) {
+        if (items == null || items.isEmpty()) return "—";
+
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < items.size(); i++) {
+            OrderItems item = items.get(i);
+
+            if (i > 0) sb.append(", ");
+
+            String name = item.getProductDescription() != null && !item.getProductDescription().trim().isEmpty()
+                    ? item.getProductDescription()
+                    : item.getProductId();
+
+            sb.append(name).append(" x").append(item.getQuantity());
+        }
+
+        return sb.toString();
     }
 
     // small circle avatar for the nav
@@ -269,6 +320,31 @@ public class MyOrdersPage extends javax.swing.JFrame {
         if (parts.length >= 2)
             return ("" + parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
         return name.substring(0, Math.min(2, name.length())).toUpperCase();
+    }
+
+    private List<OrderWithItems> loadOrdersFromDatabase() {
+        List<OrderWithItems> results = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            OrdersDAO ordersDAO = new OrdersDAO(conn);
+            OrderItemsDAO orderItemsDAO = new OrderItemsDAO(conn);
+
+            String memberEmail = CartManager.memberEmail;
+
+            if (memberEmail != null && !memberEmail.trim().isEmpty()) {
+                List<Orders> orders = ordersDAO.getOrdersByMemberEmail(memberEmail);
+
+                for (Orders order : orders) {
+                    List<OrderItems> items = orderItemsDAO.getItemsByOrderId(order.getOrderId());
+                    results.add(new OrderWithItems(order, items));
+                }
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return results;
     }
 
     @SuppressWarnings("unchecked")

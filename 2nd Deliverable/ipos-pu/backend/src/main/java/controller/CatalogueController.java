@@ -13,20 +13,32 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.List;
 
+/**
+ * Handles HTTP requests related to catalogue products.
+ * Supports retrieving all products, searching products,
+ * and retrieving a single product by ID.
+ */
 public class CatalogueController implements HttpHandler {
 
+    /**
+     * Processes incoming GET requests for catalogue endpoints.
+     *
+     * @param exchange the HTTP exchange containing request and response data
+     * @throws IOException if an I/O error occurs
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
         String method = exchange.getRequestMethod();
+
         if (!method.equalsIgnoreCase("GET")) {
             exchange.sendResponseHeaders(405, -1);
             return;
         }
 
         URI uri = exchange.getRequestURI();
-        String path = uri.getPath();          // /api/catalogue/all
-        String query = uri.getQuery();        // query=paracetamol
+        String path = uri.getPath();
+        String query = uri.getQuery();
 
         try (Connection conn = DatabaseConnection.getConnection()) {
 
@@ -39,8 +51,9 @@ public class CatalogueController implements HttpHandler {
                 return;
             }
 
-            // /api/catalogue/search?query=xxx
+            // /api/catalogue/search?query=value
             if (path.endsWith("/search")) {
+
                 if (query == null || !query.contains("query=")) {
                     sendJson(exchange, "{ \"error\": \"Missing query parameter\" }");
                     return;
@@ -48,6 +61,7 @@ public class CatalogueController implements HttpHandler {
 
                 String q = query.split("query=")[1];
                 List<Product> list = service.searchProducts(q);
+
                 sendJson(exchange, buildProductListJson(list));
                 return;
             }
@@ -55,14 +69,15 @@ public class CatalogueController implements HttpHandler {
             // /api/catalogue/item/{id}
             if (path.startsWith("/api/catalogue/item/")) {
                 String id = path.substring("/api/catalogue/item/".length());
-                Product p = service.getProductById(id);
 
-                if (p == null) {
+                Product product = service.getProductById(id);
+
+                if (product == null) {
                     sendJson(exchange, "{ \"error\": \"Item not found\" }");
                     return;
                 }
 
-                sendJson(exchange, buildProductJson(p));
+                sendJson(exchange, buildProductJson(product));
                 return;
             }
 
@@ -74,36 +89,59 @@ public class CatalogueController implements HttpHandler {
         }
     }
 
-    private String buildProductListJson(List<Product> list) {
+    /**
+     * Builds a JSON response containing a list of products.
+     *
+     * @param products the product list
+     * @return JSON string containing products
+     */
+    private String buildProductListJson(List<Product> products) {
         StringBuilder sb = new StringBuilder();
         sb.append("{ \"products\": [");
 
-        for (int i = 0; i < list.size(); i++) {
-            sb.append(buildProductJson(list.get(i)));
-            if (i < list.size() - 1) sb.append(",");
+        for (int i = 0; i < products.size(); i++) {
+            sb.append(buildProductJson(products.get(i)));
+
+            if (i < products.size() - 1) {
+                sb.append(",");
+            }
         }
 
         sb.append("] }");
         return sb.toString();
     }
 
-    private String buildProductJson(Product p) {
+    /**
+     * Builds a JSON representation of a single product.
+     *
+     * @param product the product to convert
+     * @return JSON string for the product
+     */
+    private String buildProductJson(Product product) {
         return "{"
-                + "\"itemId\":\"" + p.getItemId() + "\","
-                + "\"name\":\"" + p.getName() + "\","
-                + "\"description\":\"" + p.getDescription() + "\","
-                + "\"price\":" + p.getPrice() + ","
-                + "\"quantity\":" + p.getQuantity() + ","
-                + "\"stockLimit\":" + p.getStockLimit()
+                + "\"itemId\":\"" + product.getItemId() + "\","
+                + "\"name\":\"" + product.getName() + "\","
+                + "\"description\":\"" + product.getDescription() + "\","
+                + "\"price\":" + product.getPrice() + ","
+                + "\"quantity\":" + product.getQuantity() + ","
+                + "\"stockLimit\":" + product.getStockLimit()
                 + "}";
     }
 
-
-    private void sendJson(HttpExchange ex, String json) throws IOException {
+    /**
+     * Sends a JSON response with HTTP 200 status.
+     *
+     * @param exchange the HTTP exchange
+     * @param json the JSON body
+     * @throws IOException if an I/O error occurs
+     */
+    private void sendJson(HttpExchange exchange, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-        ex.getResponseHeaders().add("Content-Type", "application/json");
-        ex.sendResponseHeaders(200, bytes.length);
-        try (OutputStream os = ex.getResponseBody()) {
+
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, bytes.length);
+
+        try (OutputStream os = exchange.getResponseBody()) {
             os.write(bytes);
         }
     }

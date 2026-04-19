@@ -21,11 +21,18 @@ import static server.handlers.api.PromotionApi.Codes;
  * Uses query param campaignId (see PromotionApi.Routes.ADMIN_CAMPAIGN).
  *
  * Supported:
- * - GET:    fetch by id
- * - PATCH:  update fields (name/dates/status)
+ * - GET: fetch by id
+ * - PATCH: update fields (name/dates/status)
  * - DELETE: delete campaign
  */
 public class AdminPromotionCampaignHandler implements HttpHandler {
+
+    /**
+     * Routes the request to the correct handler method based on the HTTP method.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -50,6 +57,12 @@ public class AdminPromotionCampaignHandler implements HttpHandler {
         exchange.sendResponseHeaders(405, -1);
     }
 
+    /**
+     * Handles GET requests for fetching a single campaign by ID.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handleGet(HttpExchange exchange) throws IOException {
         Map<String, String> qp = RequestUtil.parseQueryParams(exchange);
         Integer campaignId = RequestUtil.getIntParam(qp, "campaignId");
@@ -81,6 +94,12 @@ public class AdminPromotionCampaignHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles PATCH requests for updating selected campaign fields.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handlePatch(HttpExchange exchange) throws IOException {
         Map<String, String> qp = RequestUtil.parseQueryParams(exchange);
         Integer campaignId = RequestUtil.getIntParam(qp, "campaignId");
@@ -125,7 +144,7 @@ public class AdminPromotionCampaignHandler implements HttpHandler {
                 return;
             }
 
-            // If either date is provided, validate combined window.
+            // If either date is provided, validate the combined window.
             Timestamp start = newStart != null ? newStart : existing.getStartDatetime();
             Timestamp end = newEnd != null ? newEnd : existing.getEndDatetime();
             if (start != null && end != null && !start.before(end)) {
@@ -133,8 +152,7 @@ public class AdminPromotionCampaignHandler implements HttpHandler {
                 return;
             }
 
-            // Apply updates via SQL to avoid side effects.
-            // (No generic DAO update existed previously.)
+            // Apply updates directly to avoid changing DAO structure.
             StringBuilder sql = new StringBuilder("UPDATE PromotionCampaign SET ");
             int fields = 0;
             if (newName != null && !newName.isEmpty()) {
@@ -178,6 +196,12 @@ public class AdminPromotionCampaignHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles DELETE requests for removing a campaign by ID.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handleDelete(HttpExchange exchange) throws IOException {
         Map<String, String> qp = RequestUtil.parseQueryParams(exchange);
         Integer campaignId = RequestUtil.getIntParam(qp, "campaignId");
@@ -209,4 +233,3 @@ public class AdminPromotionCampaignHandler implements HttpHandler {
         }
     }
 }
-

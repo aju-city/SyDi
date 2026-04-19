@@ -10,11 +10,24 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Connection;
 
+/**
+ * API handler for submitting commercial applications.
+ */
 public class CommercialApplicationHandler implements HttpHandler {
+
+    /**
+     * Response data returned after a successful submission.
+     */
     static class CommercialApplicationData {
         Integer applicationId;
     }
 
+    /**
+     * Handles POST requests to create a new commercial application.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {

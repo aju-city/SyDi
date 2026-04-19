@@ -17,11 +17,10 @@ import java.util.stream.Collectors;
 import static server.handlers.api.PromotionApi.Codes;
 
 /**
- * Public endpoint to fetch promotion products with base + discount + discounted price.
- *
- * GET PromotionApi.Routes.PROMOTION_PRODUCTS?campaignId=...
+ * Public endpoint for listing products in a promotion campaign.
  */
 public class PromotionProductsHandler implements HttpHandler {
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -78,4 +77,3 @@ public class PromotionProductsHandler implements HttpHandler {
         return d;
     }
 }
-

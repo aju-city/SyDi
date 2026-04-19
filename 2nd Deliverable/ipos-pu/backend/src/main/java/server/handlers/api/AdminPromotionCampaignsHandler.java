@@ -24,6 +24,12 @@ import static server.handlers.api.PromotionApi.Codes;
  */
 public class AdminPromotionCampaignsHandler implements HttpHandler {
 
+    /**
+     * Routes the request based on the HTTP method.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -44,6 +50,12 @@ public class AdminPromotionCampaignsHandler implements HttpHandler {
         exchange.sendResponseHeaders(405, -1);
     }
 
+    /**
+     * Handles POST requests for creating a campaign.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handleCreate(HttpExchange exchange) throws IOException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             if (conn == null) {
@@ -97,6 +109,12 @@ public class AdminPromotionCampaignsHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles GET requests for listing all campaigns.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handleList(HttpExchange exchange) throws IOException {
         try (Connection conn = DatabaseConnection.getConnection()) {
             if (conn == null) {
@@ -120,6 +138,12 @@ public class AdminPromotionCampaignsHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Maps a PromotionCampaign model to API response data.
+     *
+     * @param c the campaign model
+     * @return the mapped campaign data
+     */
     static PromotionApi.CampaignData toCampaignData(PromotionCampaign c) {
         PromotionApi.CampaignData d = new PromotionApi.CampaignData();
         d.campaignId = c.getCampaignId();
@@ -133,4 +157,3 @@ public class AdminPromotionCampaignsHandler implements HttpHandler {
         return d;
     }
 }
-

@@ -11,18 +11,33 @@ import model.NonCommercialMember;
 import java.io.IOException;
 import java.sql.Connection;
 
+/**
+ * API handler for login requests.
+ */
 public class LoginHandler implements HttpHandler {
 
+    /**
+     * Request body for login.
+     */
     static class LoginRequest {
         String emailOrUsername;
         String password;
     }
 
+    /**
+     * Response payload for successful login.
+     */
     static class LoginData {
         String role; // admin | member
         boolean mustChangePassword;
     }
 
+    /**
+     * Handles POST login requests.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
@@ -76,7 +91,7 @@ public class LoginHandler implements HttpHandler {
                 return;
             }
 
-            // 4) Invalid
+            // 4) Invalid login
             JsonUtil.sendJson(exchange, 401, ApiResponse.error("INVALID_LOGIN", "Invalid email/username or password."));
 
         } catch (Exception e) {

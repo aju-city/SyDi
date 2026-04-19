@@ -16,15 +16,24 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 
+/**
+ * Handles login requests for admin users and non-commercial members.
+ */
 public class LoginHandler implements HttpHandler {
 
     private final Gson gson = new Gson();
 
+    /**
+     * Represents the expected JSON request body for login.
+     */
     static class LoginRequest {
         String emailOrUsername;
         String password;
     }
 
+    /**
+     * Represents the JSON response returned after a login attempt.
+     */
     static class LoginResponse {
         boolean success;
         String role;                 // "admin" or "member"
@@ -32,6 +41,12 @@ public class LoginHandler implements HttpHandler {
         String message;
     }
 
+    /**
+     * Processes POST login requests.
+     *
+     * @param exchange the HTTP exchange containing the request and response
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
 
@@ -54,7 +69,7 @@ public class LoginHandler implements HttpHandler {
             CommercialApplicationDAO saDAO = new CommercialApplicationDAO(conn);
             NonCommercialMemberDAO memberDAO = new NonCommercialMemberDAO(conn);
 
-            // 1. Admin login
+            // Admin login
             if (adminDAO.authenticate(identifier, password)) {
                 response.success = true;
                 response.role = "admin";
@@ -64,7 +79,7 @@ public class LoginHandler implements HttpHandler {
                 return;
             }
 
-            // 2. SA commercial applicants cannot log in
+            // SA commercial applicants cannot log in through this portal
             if (saDAO.emailExists(identifier)) {
                 response.success = false;
                 response.message = "Commercial applicants cannot log in here.";
@@ -72,11 +87,10 @@ public class LoginHandler implements HttpHandler {
                 return;
             }
 
-            // 3. Non-commercial member login
+            // Non-commercial member login
             NonCommercialMember member = memberDAO.getMemberByEmail(identifier);
 
             if (member != null && member.getPassword().equals(password)) {
-
                 response.success = true;
                 response.role = "member";
                 response.mustChangePassword = member.isMustChangePassword();
@@ -91,7 +105,7 @@ public class LoginHandler implements HttpHandler {
                 return;
             }
 
-            // 4. Invalid login
+            // Invalid login
             response.success = false;
             response.message = "Invalid email/username or password.";
             sendJson(exchange, response);
@@ -100,12 +114,20 @@ public class LoginHandler implements HttpHandler {
             e.printStackTrace();
             String error = "{ \"success\": false, \"message\": \"Server error\" }";
             exchange.sendResponseHeaders(500, error.getBytes().length);
+
             try (OutputStream os = exchange.getResponseBody()) {
                 os.write(error.getBytes());
             }
         }
     }
 
+    /**
+     * Reads the full request body from the input stream.
+     *
+     * @param input the request body input stream
+     * @return the request body as a string
+     * @throws IOException if an I/O error occurs while reading the stream
+     */
     private String readBody(InputStream input) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
@@ -118,10 +140,18 @@ public class LoginHandler implements HttpHandler {
         return result.toString("UTF-8");
     }
 
+    /**
+     * Sends a JSON response with HTTP 200 status.
+     *
+     * @param exchange the HTTP exchange
+     * @param obj the object to serialize as JSON
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void sendJson(HttpExchange exchange, Object obj) throws IOException {
         String json = gson.toJson(obj);
         exchange.getResponseHeaders().add("Content-Type", "application/json");
         exchange.sendResponseHeaders(200, json.getBytes().length);
+
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(json.getBytes(StandardCharsets.UTF_8));
         }

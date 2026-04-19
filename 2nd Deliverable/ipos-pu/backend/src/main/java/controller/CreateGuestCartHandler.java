@@ -4,28 +4,33 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import dao.CartDAO;
 
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handles requests to create a new guest shopping cart.
+ */
 public class CreateGuestCartHandler implements HttpHandler {
 
+    /**
+     * Processes POST requests to create a guest cart and return its token.
+     *
+     * @param exchange the HTTP exchange containing request and response data
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!exchange.getRequestMethod().equalsIgnoreCase("POST")) {
-            exchange.sendResponseHeaders(405, -1); // Method Not Allowed
+            exchange.sendResponseHeaders(405, -1);
             return;
         }
 
         try {
-            // 1. Generate token
             String guestToken = generateGuestToken();
 
-            // 2. Insert into DB
             CartDAO.createGuestCart(guestToken);
 
-            // 3. Build JSON response
             String json = "{ \"guestToken\": \"" + guestToken + "\" }";
 
             byte[] responseBytes = json.getBytes(StandardCharsets.UTF_8);
@@ -46,8 +51,13 @@ public class CreateGuestCartHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Generates a simple guest token in the format GT-xxxxx.
+     *
+     * @return a generated guest token
+     */
     private String generateGuestToken() {
-        int num = (int)(Math.random() * 90000) + 10000; // 10000–99999
+        int num = (int) (Math.random() * 90000) + 10000;
         return "GT-" + num;
     }
 }

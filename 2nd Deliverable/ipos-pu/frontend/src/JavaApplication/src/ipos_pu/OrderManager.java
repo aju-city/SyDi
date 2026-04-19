@@ -54,8 +54,25 @@ public class OrderManager {
     }
 
     // true if the next order placed will be a 10th milestone so the loyalty discount applies
-    public static boolean isLoyaltyOrder() {
-        return orders.size() % 10 == 9;
+    public static boolean isLoyaltyOrder(String memberEmail) {
+        try (java.sql.Connection conn = db.DatabaseConnection.getConnection()) {
+
+            String sql = "SELECT COUNT(*) FROM Orders WHERE member_email = ?";
+            java.sql.PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, memberEmail);
+
+            java.sql.ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int count = rs.getInt(1);
+                return count % 10 == 9;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // total number of orders placed so far, useful for the reports

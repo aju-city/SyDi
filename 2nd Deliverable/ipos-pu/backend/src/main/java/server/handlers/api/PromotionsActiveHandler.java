@@ -15,11 +15,10 @@ import java.util.stream.Collectors;
 import static server.handlers.api.PromotionApi.Codes;
 
 /**
- * Public endpoint to list active campaigns.
- *
- * GET PromotionApi.Routes.PROMOTIONS_ACTIVE
+ * Public endpoint for listing currently active campaigns.
  */
 public class PromotionsActiveHandler implements HttpHandler {
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -49,4 +48,3 @@ public class PromotionsActiveHandler implements HttpHandler {
         }
     }
 }
-

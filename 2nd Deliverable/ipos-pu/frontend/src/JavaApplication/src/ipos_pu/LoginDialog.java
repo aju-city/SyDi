@@ -11,11 +11,12 @@ import java.net.URL;
 import javax.swing.*;
 
 /**
+ Login dialog for member and admin sign-in.
  *
  * @author nuhur
  */
 public class LoginDialog extends javax.swing.JDialog {
-    
+
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(LoginDialog.class.getName());
     private JLabel errorLabel;
 
@@ -29,6 +30,9 @@ public class LoginDialog extends javax.swing.JDialog {
         setLocationRelativeTo(parent);
     }
 
+    /**
+     Builds and styles the login dialog layout and controls.
+     */
     private void styleComponents() {
         final Color BG      = new Color(0x05080f);
         final Color NEON    = new Color(0x2563A8);
@@ -37,7 +41,6 @@ public class LoginDialog extends javax.swing.JDialog {
         setSize(460, 440);
         setResizable(false);
 
-        //following landing page theme
         JPanel bg = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -49,7 +52,7 @@ public class LoginDialog extends javax.swing.JDialog {
                 g2.setColor(new Color(37, 99, 168, 5));
                 for (int y = 0; y < h; y += 4) g2.drawLine(0, y, w, y);
                 g2.setPaint(new RadialGradientPaint(w/2f, h/2f, Math.max(w,h)/2f,
-                    new float[]{0f,1f}, new Color[]{new Color(37,99,168,40), new Color(0,0,0,0)}));
+                        new float[]{0f,1f}, new Color[]{new Color(37,99,168,40), new Color(0,0,0,0)}));
                 g2.fillRect(0, 0, w, h);
                 g2.dispose();
             }
@@ -64,7 +67,6 @@ public class LoginDialog extends javax.swing.JDialog {
         content.setPreferredSize(new Dimension(320, 360));
         bg.add(content);
 
-        // Title and subtitle
         loginText.setText("Welcome Back");
         loginText.setFont(new Font("Trebuchet MS", Font.BOLD, 30));
         loginText.setForeground(Color.WHITE);
@@ -75,7 +77,6 @@ public class LoginDialog extends javax.swing.JDialog {
         subtitle.setForeground(new Color(255, 255, 255, 75));
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Field labels
         usernameText.setText("USERNAME");
         usernameText.setFont(new Font("Segoe UI", Font.BOLD, 10));
         usernameText.setForeground(NEON);
@@ -86,13 +87,11 @@ public class LoginDialog extends javax.swing.JDialog {
         passwordText.setForeground(NEON);
         passwordText.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-
         styleField(usernameField, NEON_LT);
         styleField(passwordField, NEON_LT);
         signInButton.setText("SIGN IN");
         styleButton(signInButton);
 
-        // Inline error label
         errorLabel = new JLabel();
         errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         errorLabel.setForeground(new Color(255, 90, 90));
@@ -121,6 +120,9 @@ public class LoginDialog extends javax.swing.JDialog {
         getContentPane().repaint();
     }
 
+    /**
+     Styles a text field used in the login form.
+     */
     private void styleField(JTextField field, Color focusColor) {
         field.setBackground(new Color(8, 16, 30));
         field.setForeground(Color.WHITE);
@@ -131,12 +133,12 @@ public class LoginDialog extends javax.swing.JDialog {
         field.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         javax.swing.border.Border normal = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
         );
         javax.swing.border.Border focused = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 2, 0, focusColor),
-            BorderFactory.createEmptyBorder(8, 12, 7, 12)
+                BorderFactory.createMatteBorder(0, 0, 2, 0, focusColor),
+                BorderFactory.createEmptyBorder(8, 12, 7, 12)
         );
         field.setBorder(normal);
         field.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -145,6 +147,9 @@ public class LoginDialog extends javax.swing.JDialog {
         });
     }
 
+    /**
+     Styles the sign-in button.
+     */
     private void styleButton(JButton btn) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setPreferredSize(new Dimension(320, 50));
@@ -179,13 +184,16 @@ public class LoginDialog extends javax.swing.JDialog {
                 g2.setFont(c.getFont());
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(btn.getText(),
-                    (w - fm.stringWidth(btn.getText())) / 2,
-                    (h + fm.getAscent() - fm.getDescent()) / 2);
+                        (w - fm.stringWidth(btn.getText())) / 2,
+                        (h + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         });
     }
 
+    /**
+     Displays an inline error message in the dialog.
+     */
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
@@ -225,48 +233,51 @@ public class LoginDialog extends javax.swing.JDialog {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(42, 42, 42)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(passwordText)
-                    .addComponent(usernameText))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(usernameField)
-                    .addComponent(passwordField, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(147, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(loginText)
-                        .addGap(138, 138, 138))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(signInButton)
-                        .addGap(132, 132, 132))))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addGap(42, 42, 42)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addComponent(passwordText)
+                                        .addComponent(usernameText))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(usernameField)
+                                        .addComponent(passwordField, javax.swing.GroupLayout.DEFAULT_SIZE, 150, Short.MAX_VALUE))
+                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addContainerGap(147, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addComponent(loginText)
+                                                .addGap(138, 138, 138))
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addComponent(signInButton)
+                                                .addGap(132, 132, 132))))
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(loginText)
-                .addGap(41, 41, 41)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(usernameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(usernameText))
-                .addGap(28, 28, 28)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(passwordText)
-                    .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(34, 34, 34)
-                .addComponent(signInButton)
-                .addContainerGap(52, Short.MAX_VALUE))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addComponent(loginText)
+                                .addGap(41, 41, 41)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(usernameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(usernameText))
+                                .addGap(28, 28, 28)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(passwordText)
+                                        .addComponent(passwordField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(34, 34, 34)
+                                .addComponent(signInButton)
+                                .addContainerGap(52, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     Handles sign-in validation and login requests.
+     */
     private void signInButtonActionPerformed(java.awt.event.ActionEvent evt) {
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword()).trim();
@@ -284,12 +295,11 @@ public class LoginDialog extends javax.swing.JDialog {
             return;
         }
 
-        // admin — bypass backend entirely
         if (username.equals("admin")) {
             java.awt.Window owner = getOwner();
             this.dispose();
             if (owner != null) owner.dispose();
-            new AdminPage().setVisible(true);
+            new AdminPage(username).setVisible(true);
             return;
         }
 
@@ -307,7 +317,6 @@ public class LoginDialog extends javax.swing.JDialog {
 
             int status = conn.getResponseCode();
 
-            // read body — use errorStream on 4xx/5xx
             java.io.InputStream is = status >= 400 ? conn.getErrorStream() : conn.getInputStream();
             java.io.ByteArrayOutputStream result = new java.io.ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -326,7 +335,6 @@ public class LoginDialog extends javax.swing.JDialog {
                 return;
             }
 
-            // simple JSON field extraction without Gson
             String role = extractField(response, "role");
             String mustChangePwd = extractField(response, "mustChangePassword");
 
@@ -334,7 +342,7 @@ public class LoginDialog extends javax.swing.JDialog {
                 java.awt.Window owner = getOwner();
                 this.dispose();
                 if (owner != null) owner.dispose();
-                new AdminPage().setVisible(true);
+                new AdminPage(username).setVisible(true);
                 return;
             }
 
@@ -365,6 +373,9 @@ public class LoginDialog extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_signInButtonActionPerformed
 
+    /**
+     Handles Enter key submission from the password field.
+     */
     private void passwordFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_passwordFieldActionPerformed
         signInButtonActionPerformed(evt);
     }//GEN-LAST:event_passwordFieldActionPerformed
@@ -377,6 +388,10 @@ public class LoginDialog extends javax.swing.JDialog {
     private javax.swing.JButton signInButton;
     private javax.swing.JLabel loginText;
     // End of variables declaration//GEN-END:variables
+
+    /**
+     Extracts a simple field value from a JSON response string.
+     */
     private String extractField(String json, String key) {
         String search = "\"" + key + "\"";
         int idx = json.indexOf(search);

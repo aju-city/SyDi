@@ -10,12 +10,18 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Data access class for shopping cart operations.
+ */
 public class CartDAO {
 
-    /*
-       CREATE CARTS
-    */
 
+    /**
+     * Creates a new guest cart.
+     *
+     * @param guestToken the guest cart token
+     * @throws Exception if the insert fails
+     */
     public static void createGuestCart(String guestToken) throws Exception {
         String sql = "INSERT INTO ipos_pu.ShoppingCart (guest_token, customer_type) VALUES (?, 'GUEST')";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -25,6 +31,12 @@ public class CartDAO {
         }
     }
 
+    /**
+     * Creates a new member cart.
+     *
+     * @param memberEmail the member email
+     * @throws Exception if the insert fails
+     */
     public static void createMemberCart(String memberEmail) throws Exception {
         String sql = "INSERT INTO ipos_pu.ShoppingCart (member_email, customer_type) VALUES (?, 'MEMBER')";
         try (Connection conn = DatabaseConnection.getConnection();
@@ -34,16 +46,25 @@ public class CartDAO {
         }
     }
 
-    /*
-       CART ITEM VIEW
-    */
 
+
+    /**
+     * Simple view model used when returning cart items.
+     */
     public static class CartItemView {
         public String itemId;
         public String name;
         public double price;
         public int qty;
 
+        /**
+         * Creates a cart item view.
+         *
+         * @param itemId the product ID
+         * @param name the product name
+         * @param price the product price
+         * @param qty the quantity in the cart
+         */
         public CartItemView(String itemId, String name, double price, int qty) {
             this.itemId = itemId;
             this.name = name;
@@ -52,10 +73,15 @@ public class CartDAO {
         }
     }
 
-    /*
-       INTERNAL HELPERS
-    */
 
+    /**
+     * Finds a cart ID using a guest token.
+     *
+     * @param conn the active database connection
+     * @param guestToken the guest token
+     * @return the cart ID, or null if not found
+     * @throws Exception if the query fails
+     */
     private static Integer findCartIdByGuestToken(Connection conn, String guestToken) throws Exception {
         String sql = "SELECT cart_id FROM ipos_pu.ShoppingCart WHERE guest_token = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -66,6 +92,14 @@ public class CartDAO {
         }
     }
 
+    /**
+     * Finds a cart ID using a member email.
+     *
+     * @param conn the active database connection
+     * @param memberEmail the member email
+     * @return the cart ID, or null if not found
+     * @throws Exception if the query fails
+     */
     private static Integer findCartIdByMemberEmail(Connection conn, String memberEmail) throws Exception {
         String sql = "SELECT cart_id FROM ipos_pu.ShoppingCart WHERE member_email = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -76,10 +110,15 @@ public class CartDAO {
         }
     }
 
-    /*
-       ADD / UPDATE (GUEST)
-     */
 
+    /**
+     * Adds a new item to a guest cart or updates its quantity if it already exists.
+     *
+     * @param guestToken the guest token
+     * @param itemId the product ID
+     * @param qty the quantity to add
+     * @throws Exception if the update fails or stock rules are violated
+     */
     public static void addOrUpdateCartItem(String guestToken, String itemId, int qty) throws Exception {
 
         String findExisting = "SELECT quantity FROM ipos_pu.ShoppingCartItems WHERE cart_id = ? AND product_id = ?";
@@ -90,7 +129,14 @@ public class CartDAO {
         try (Connection conn = DatabaseConnection.getConnection()) {
 
             Integer cartId = findCartIdByGuestToken(conn, guestToken);
-            if (cartId == null) throw new Exception("Cart not found");
+            if (cartId == null) {
+                createGuestCart(guestToken);
+                cartId = findCartIdByGuestToken(conn, guestToken);
+            }
+
+            if (cartId == null) {
+                throw new Exception("Cart not found");
+            }
 
             Integer existingQty = null;
             try (PreparedStatement stmt = conn.prepareStatement(findExisting)) {
@@ -145,10 +191,16 @@ public class CartDAO {
         }
     }
 
-    /*
-       ADD / UPDATE (MEMBER)
-     */
 
+
+    /**
+     * Adds a new item to a member cart or updates its quantity if it already exists.
+     *
+     * @param memberEmail the member email
+     * @param itemId the product ID
+     * @param qty the quantity to add
+     * @throws Exception if the update fails or stock rules are violated
+     */
     public static void addOrUpdateCartItemForMember(String memberEmail, String itemId, int qty) throws Exception {
 
         String findExisting = "SELECT quantity FROM ipos_pu.ShoppingCartItems WHERE cart_id = ? AND product_id = ?";
@@ -217,10 +269,15 @@ public class CartDAO {
         }
     }
 
-    /*
-       GET CART ITEMS (GUEST + MEMBER)
-     */
 
+
+    /**
+     * Returns all cart items for a guest cart.
+     *
+     * @param guestToken the guest token
+     * @return list of cart item views
+     * @throws Exception if the query fails
+     */
     public static List<CartItemView> getCartItems(String guestToken) throws Exception {
         List<CartItemView> list = new ArrayList<>();
 
@@ -250,6 +307,13 @@ public class CartDAO {
         return list;
     }
 
+    /**
+     * Returns all cart items for a member cart.
+     *
+     * @param memberEmail the member email
+     * @return list of cart item views
+     * @throws Exception if the query fails
+     */
     public static List<CartItemView> getCartItemsForMember(String memberEmail) throws Exception {
         List<CartItemView> list = new ArrayList<>();
 
@@ -279,10 +343,14 @@ public class CartDAO {
         return list;
     }
 
-    /*
-       REMOVE ITEM (GUEST + MEMBER)
-     */
 
+    /**
+     * Removes an item from a guest cart.
+     *
+     * @param guestToken the guest token
+     * @param itemId the product ID
+     * @throws Exception if the delete fails
+     */
     public static void removeItem(String guestToken, String itemId) throws Exception {
         String findCartId = "SELECT cart_id FROM ipos_pu.ShoppingCart WHERE guest_token = ?";
         String delete = "DELETE FROM ipos_pu.ShoppingCartItems WHERE cart_id = ? AND product_id = ?";
@@ -305,6 +373,12 @@ public class CartDAO {
         }
     }
 
+    /**
+     * Clears all items from a member cart.
+     *
+     * @param email the member email
+     * @throws Exception if the delete fails
+     */
     public static void clearCartForMember(String email) throws Exception {
         try (Connection conn = DatabaseConnection.getConnection()) {
             Integer cartId = findCartIdByMemberEmail(conn, email);
@@ -314,6 +388,12 @@ public class CartDAO {
         }
     }
 
+    /**
+     * Clears all items from a guest cart.
+     *
+     * @param token the guest token
+     * @throws Exception if the delete fails
+     */
     public static void clearCartForGuest(String token) throws Exception {
         try (Connection conn = DatabaseConnection.getConnection()) {
             Integer cartId = findCartIdByGuestToken(conn, token);
@@ -323,6 +403,13 @@ public class CartDAO {
         }
     }
 
+    /**
+     * Deletes all items for the given cart ID.
+     *
+     * @param conn the active database connection
+     * @param cartId the cart ID
+     * @throws SQLException if the delete fails
+     */
     private static void deleteCartItems(Connection conn, int cartId) throws SQLException {
         String sql = "DELETE FROM ShoppingCartItems WHERE cart_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -331,7 +418,13 @@ public class CartDAO {
         }
     }
 
-
+    /**
+     * Removes an item from a member cart.
+     *
+     * @param memberEmail the member email
+     * @param itemId the product ID
+     * @throws Exception if the delete fails
+     */
     public static void removeItemForMember(String memberEmail, String itemId) throws Exception {
         String findCartId = "SELECT cart_id FROM ipos_pu.ShoppingCart WHERE member_email = ?";
         String delete = "DELETE FROM ipos_pu.ShoppingCartItems WHERE cart_id = ? AND product_id = ?";

@@ -6,19 +6,32 @@ package ipos_pu;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.border.*;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
+ * Admin dashboard for managing campaigns and viewing reports.
  *
  * @author nuhur
  */
 public class AdminPage extends javax.swing.JFrame {
 
-    // colour palette
     private static final Color BG      = new Color(0x05080f);
     private static final Color PANEL   = new Color(0x080e1a);
     private static final Color NEON    = new Color(0x2563A8);
@@ -27,21 +40,24 @@ public class AdminPage extends javax.swing.JFrame {
     private static final Color RED     = new Color(0xf87171);
     private static final Color AMBER   = new Color(0xfbbf24);
 
-    // card layout and the panel it controls for switching between the four sections
     private CardLayout cardLayout;
     private JPanel     mainContent;
-    // list of all tab buttons so we can update which one looks selected
     private final List<JButton> tabBtns = new ArrayList<>();
-    // keys used to identify each panel in the card layout
+
     private static final String TAB_PROMOS    = "promos";
     private static final String TAB_SALES     = "sales";
     private static final String TAB_CAMPAIGNS = "campaigns";
     private static final String TAB_ENGAGE    = "engagement";
 
-    // item names loaded from db for the campaign form dropdowns
     private List<String> itemNames = new ArrayList<>();
 
-    public AdminPage() {
+    private static final java.time.format.DateTimeFormatter ADMIN_DATE_FMT =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private String username;
+
+    public AdminPage(String username) {
+        this.username = username;
         initComponents();
         buildUI();
     }
@@ -52,15 +68,18 @@ public class AdminPage extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-        private void buildUI() {
-        setTitle("IPOS-PU \u2014 Admin Panel");
+    /**
+     * Sets up the main admin page layout and loads the four dashboard sections.
+     */
+    private void buildUI() {
+        System.out.println("Logged in admin username = " + username);
+        setTitle("IPOS-PU — Admin Panel");
         setSize(1280, 760);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         getContentPane().setBackground(BG);
         getContentPane().setLayout(new BorderLayout());
 
-        // load item names from db once when admin page opens
         itemNames = loadItemNames();
 
         cardLayout  = new CardLayout();
@@ -80,33 +99,72 @@ public class AdminPage extends javax.swing.JFrame {
         getContentPane().add(wrapper,    BorderLayout.CENTER);
     }
 
-    // loads all item names from the stock_items table so the campaign form dropdowns are populated
+    /**
+     * Loads stock item names for the campaign form dropdowns.
+     */
     private List<String> loadItemNames() {
         List<String> names = new ArrayList<>();
-        try (java.sql.Connection con = DBConnection.getConnection();
-             java.sql.Statement st = con.createStatement();
-             java.sql.ResultSet rs = st.executeQuery("SELECT name FROM ipos_ca.stock_items ORDER BY name")) {
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement st = con.prepareStatement("SELECT name FROM ipos_ca.stock_items ORDER BY name");
+             ResultSet rs = st.executeQuery()) {
             while (rs.next()) names.add(rs.getString("name"));
-        } catch (java.sql.SQLException ex) {
-            // db might not be available, form will show empty dropdown
+        } catch (Exception ex) {
+            // Leave dropdowns empty if the database is unavailable.
         }
         return names;
     }
 
-    // top nav with brand badge and sign out button
+    /**
+     * Extracts a simple JSON value by key.
+     */
+    private String extract(String json, String key) {
+        String search = "\"" + key + "\"";
+        int start = json.indexOf(search);
+        if (start == -1) return null;
+
+        int colon = json.indexOf(":", start);
+        if (colon == -1) return null;
+
+        int valueStart = colon + 1;
+        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
+            valueStart++;
+        }
+
+        if (valueStart >= json.length()) return null;
+
+        if (json.charAt(valueStart) == '"') {
+            int endQuote = json.indexOf("\"", valueStart + 1);
+            if (endQuote == -1) return null;
+            return json.substring(valueStart + 1, endQuote);
+        }
+
+        int end = valueStart;
+        while (end < json.length()
+                && json.charAt(end) != ','
+                && json.charAt(end) != '}'
+                && !Character.isWhitespace(json.charAt(end))) {
+            end++;
+        }
+
+        return json.substring(valueStart, end);
+    }
+
+    /**
+     * Builds the top navigation bar shown on the admin page.
+     */
     private JPanel buildNav() {
         JPanel nav = new JPanel();
         nav.setBackground(PANEL);
         nav.setPreferredSize(new Dimension(0, 58));
         nav.setLayout(new BoxLayout(nav, BoxLayout.X_AXIS));
         nav.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
-            BorderFactory.createEmptyBorder(0, 20, 0, 20)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
+                BorderFactory.createEmptyBorder(0, 20, 0, 20)
         ));
 
         JLabel brand = new JLabel("<html><span style='font-family:Trebuchet MS;font-size:16px;"
-            + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
-            + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
+                + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
+                + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
 
         JLabel adminBadge = new JLabel("ADMIN");
         adminBadge.setFont(new Font("Segoe UI", Font.BOLD, 9));
@@ -114,8 +172,8 @@ public class AdminPage extends javax.swing.JFrame {
         adminBadge.setOpaque(true);
         adminBadge.setBackground(new Color(37, 99, 168, 40));
         adminBadge.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
-            BorderFactory.createEmptyBorder(2, 6, 2, 6)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
+                BorderFactory.createEmptyBorder(2, 6, 2, 6)
         ));
 
         JButton signOutBtn = new JButton("Sign Out");
@@ -123,8 +181,8 @@ public class AdminPage extends javax.swing.JFrame {
         signOutBtn.setForeground(new Color(255, 255, 255, 160));
         signOutBtn.setBackground(new Color(0x0b1220));
         signOutBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 14, 6, 14)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
         ));
         signOutBtn.setFocusPainted(false);
         signOutBtn.setOpaque(true);
@@ -139,6 +197,434 @@ public class AdminPage extends javax.swing.JFrame {
         return nav;
     }
 
+    private static class AdminCampaignData {
+        Integer campaignId;
+        String campaignName;
+        String startDatetime;
+        String endDatetime;
+        String status;
+        java.util.List<AdminCampaignItemData> items = new ArrayList<>();
+    }
+
+    private static class AdminCampaignItemData {
+        Integer campaignItemId;
+        String productId;
+        String productName;
+        Double discountRate;
+    }
+
+    /**
+     * Sends an update request for a campaign to the backend API.
+     */
+    private boolean updateCampaignOnBackend(Integer campaignId, String name, String startIso, String endIso, String status) {
+        try {
+            String json = "{"
+                    + "\"campaignId\":" + campaignId + ","
+                    + "\"campaignName\":\"" + name + "\","
+                    + "\"startDatetime\":\"" + startIso + "\","
+                    + "\"endDatetime\":\"" + endIso + "\","
+                    + "\"status\":\"" + status + "\""
+                    + "}";
+
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/admin/promotions/campaign?campaignId=" + campaignId))
+                    .header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("UPDATE CAMPAIGN status = " + response.statusCode());
+            System.out.println("UPDATE CAMPAIGN response = " + response.body());
+
+            return response.statusCode() == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Sends an update request for a campaign item discount to the backend API.
+     */
+    private boolean updateCampaignItemOnBackend(Integer campaignItemId, double discountRate) {
+        try {
+            String json = "{"
+                    + "\"campaignItemId\":" + campaignItemId + ","
+                    + "\"discountRate\":" + discountRate
+                    + "}";
+
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/admin/promotions/campaign/item?campaignItemId=" + campaignItemId))
+                    .header("Content-Type", "application/json")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            System.out.println("UPDATE CAMPAIGN ITEM status = " + response.statusCode());
+            System.out.println("UPDATE CAMPAIGN ITEM response = " + response.body());
+
+            return response.statusCode() == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a single campaign item through the backend API.
+     */
+    private boolean deleteCampaignItemOnBackend(Integer campaignItemId) {
+        try {
+            URL url = new URL("http://localhost:8080/api/admin/promotions/campaign/item?campaignItemId=" + campaignItemId);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("DELETE");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300
+                                ? conn.getInputStream()
+                                : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("DELETE CAMPAIGN ITEM status = " + status);
+            System.out.println("DELETE CAMPAIGN ITEM response = " + response);
+
+            return status == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Deletes all items linked to a campaign, then deletes the campaign itself.
+     */
+    private boolean deleteCampaignFully(Integer campaignId) {
+        try {
+            AdminCampaignData existing = null;
+            for (AdminCampaignData c : loadCampaignsFromBackend()) {
+                if (c.campaignId.equals(campaignId)) {
+                    existing = c;
+                    break;
+                }
+            }
+
+            if (existing != null) {
+                for (AdminCampaignItemData item : existing.items) {
+                    deleteCampaignItemOnBackend(item.campaignItemId);
+                }
+            }
+
+            return deleteCampaignOnBackend(campaignId);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Adds a product and discount entry to a campaign through the backend API.
+     */
+    private boolean addCampaignItemOnBackend(int campaignId, String productId, double discountRate) {
+        try {
+            URL url = new URL("http://localhost:8080/api/admin/promotions/campaign/items?campaignId=" + campaignId);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String json = "{"
+                    + "\"campaignId\":" + campaignId + ","
+                    + "\"productId\":\"" + productId + "\","
+                    + "\"discountRate\":" + discountRate
+                    + "}";
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(json.getBytes());
+            }
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300
+                                ? conn.getInputStream()
+                                : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("ADD CAMPAIGN ITEM status = " + status);
+            System.out.println("ADD CAMPAIGN ITEM response = " + response);
+
+            return status == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Deletes a campaign through the backend API.
+     */
+    private boolean deleteCampaignOnBackend(Integer campaignId) {
+        try {
+            URL url = new URL("http://localhost:8080/api/admin/promotions/campaign?campaignId=" + campaignId);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("DELETE");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300
+                                ? conn.getInputStream()
+                                : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("DELETE CAMPAIGN status = " + status);
+            System.out.println("DELETE CAMPAIGN response = " + response);
+
+            return status == 200;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Creates a new campaign through the backend API and returns its ID.
+     */
+    private Integer createCampaignOnBackend(String name, String start, String end, String createdBy, String status) {
+        try {
+            URL url = new URL("http://localhost:8080/api/admin/promotions/campaigns");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            String json = "{"
+                    + "\"campaignName\":\"" + name + "\","
+                    + "\"startDatetime\":\"" + start + "\","
+                    + "\"endDatetime\":\"" + end + "\","
+                    + "\"createdBy\":\"" + createdBy + "\","
+                    + "\"status\":\"" + status + "\""
+                    + "}";
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(json.getBytes());
+            }
+
+            int httpStatus = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (httpStatus >= 200 && httpStatus < 300
+                                ? conn.getInputStream()
+                                : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("CREATE CAMPAIGN status = " + httpStatus);
+            System.out.println("CREATE CAMPAIGN response = " + response);
+
+            if (httpStatus != 200) return null;
+
+            int idx = response.indexOf("\"campaignId\"");
+            if (idx != -1) {
+                int startIdx = response.indexOf(":", idx) + 1;
+                int endIdx = response.indexOf(",", startIdx);
+                if (endIdx == -1) endIdx = response.indexOf("}", startIdx);
+                return Integer.parseInt(response.substring(startIdx, endIdx).trim());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    /**
+     * Loads all campaigns from the backend and fills each one with its item data.
+     */
+    private List<AdminCampaignData> loadCampaignsFromBackend() {
+        List<AdminCampaignData> campaigns = new ArrayList<>();
+
+        try {
+            URL url = new URL("http://localhost:8080/api/admin/promotions/campaigns");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300
+                                ? conn.getInputStream()
+                                : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("ADMIN CAMPAIGNS status = " + status);
+            System.out.println("ADMIN CAMPAIGNS response = " + response);
+
+            if (status >= 400) return campaigns;
+
+            int campaignsKey = response.indexOf("\"campaigns\"");
+            if (campaignsKey == -1) return campaigns;
+
+            int arrStart = response.indexOf("[", campaignsKey);
+            int arrEnd = response.lastIndexOf("]");
+            if (arrStart == -1 || arrEnd == -1 || arrEnd <= arrStart) return campaigns;
+
+            String itemsArray = response.substring(arrStart + 1, arrEnd).trim();
+            if (itemsArray.isEmpty()) return campaigns;
+
+            String[] objects = itemsArray.split("\\},\\s*\\{");
+
+            for (String obj : objects) {
+                String clean = obj;
+                if (!clean.startsWith("{")) clean = "{" + clean;
+                if (!clean.endsWith("}")) clean = clean + "}";
+
+                AdminCampaignData card = new AdminCampaignData();
+
+                String idStr = extract(clean, "campaignId");
+                if (idStr == null) continue;
+
+                card.campaignId = Integer.parseInt(idStr);
+                card.campaignName = extract(clean, "campaignName");
+                card.startDatetime = extract(clean, "startDatetime");
+                card.endDatetime = extract(clean, "endDatetime");
+                card.status = extract(clean, "status");
+
+                loadCampaignItemsFromBackend(card);
+
+                campaigns.add(card);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return campaigns;
+    }
+    /**
+     * Loads all items linked to a campaign from the backend API.
+     */
+    private void loadCampaignItemsFromBackend(AdminCampaignData campaign) {
+        if (campaign == null || campaign.campaignId == null) return;
+
+        campaign.items.clear();
+
+        try {
+            URL url = new URL("http://localhost:8080/api/admin/promotions/campaign/items?campaignId=" + campaign.campaignId);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300
+                                ? conn.getInputStream()
+                                : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("ADMIN CAMPAIGN ITEMS status = " + status);
+            System.out.println("ADMIN CAMPAIGN ITEMS response = " + response);
+
+            if (status >= 400) return;
+
+            int itemsKey = response.indexOf("\"items\"");
+            if (itemsKey == -1) return;
+
+            int arrStart = response.indexOf("[", itemsKey);
+            int arrEnd = response.lastIndexOf("]");
+            if (arrStart == -1 || arrEnd == -1 || arrEnd <= arrStart) return;
+
+            String itemsArray = response.substring(arrStart + 1, arrEnd).trim();
+            if (itemsArray.isEmpty()) return;
+
+            String[] objects = itemsArray.split("\\},\\s*\\{");
+            for (String obj : objects) {
+                String clean = obj;
+                if (!clean.startsWith("{")) clean = "{" + clean;
+                if (!clean.endsWith("}")) clean = clean + "}";
+
+                String campaignItemIdStr = extract(clean, "campaignItemId");
+                String productId = extract(clean, "productId");
+                String discountRateStr = extract(clean, "discountRate");
+
+                if (campaignItemIdStr == null || productId == null || discountRateStr == null) continue;
+
+                AdminCampaignItemData item = new AdminCampaignItemData();
+                item.campaignItemId = Integer.parseInt(campaignItemIdStr);
+                item.productId = productId;
+                item.productName = lookupItemNameById(productId);
+                if (item.productName == null) item.productName = productId;
+                item.discountRate = Double.parseDouble(discountRateStr);
+
+                campaign.items.add(item);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Looks up a stock item name using its item ID.
+     */
+    private String lookupItemNameById(String productId) {
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT name FROM ipos_ca.stock_items WHERE item_id = ?")) {
+            st.setString(1, productId);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getString("name");
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /**
+     * Looks up a stock item ID using its item name.
+     */
+    private String lookupItemIdByName(String itemName) {
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement st = con.prepareStatement(
+                     "SELECT item_id FROM ipos_ca.stock_items WHERE name = ?")) {
+            st.setString(1, itemName);
+            try (ResultSet rs = st.executeQuery()) {
+                if (rs.next()) return rs.getString("item_id");
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    /**
+     * Builds the promotions tab, including the create form and campaign list.
+     */
     private JScrollPane buildPromotionsTab() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -146,25 +632,22 @@ public class AdminPage extends javax.swing.JFrame {
         outer.setBorder(BorderFactory.createEmptyBorder(28, 32, 32, 32));
 
         outer.add(buildReportHeader("ADMIN PANEL", "Promotions Management",
-            "Create campaigns from scratch with per-item discounts. No limit on number of campaigns."));
+                "Create campaigns from scratch with per-item discounts. No limit on number of campaigns."));
         outer.add(Box.createVerticalStrut(20));
 
-        // the form panel — hidden until new campaign or edit is clicked
         JPanel formHolder = new JPanel();
         formHolder.setOpaque(false);
         formHolder.setLayout(new BoxLayout(formHolder, BoxLayout.Y_AXIS));
         formHolder.setAlignmentX(LEFT_ALIGNMENT);
 
-        // campaign list panel — rebuilt whenever a campaign is added/edited/deleted
         JPanel listPanel = new JPanel();
         listPanel.setOpaque(false);
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setAlignmentX(LEFT_ALIGNMENT);
 
-        // callback to rebuild the list
         Runnable refreshList = () -> {
             listPanel.removeAll();
-            List<PromoManager.Campaign> all = PromoManager.getCampaigns();
+            List<AdminCampaignData> all = loadCampaignsFromBackend();
             if (all.isEmpty()) {
                 JLabel none = new JLabel("No campaigns created yet. Click '+ New Campaign' to start.");
                 none.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -172,7 +655,7 @@ public class AdminPage extends javax.swing.JFrame {
                 none.setAlignmentX(LEFT_ALIGNMENT);
                 listPanel.add(none);
             } else {
-                for (PromoManager.Campaign c : all) {
+                for (AdminCampaignData c : all) {
                     listPanel.add(buildCampaignRow(c, formHolder, listPanel));
                     listPanel.add(Box.createVerticalStrut(10));
                 }
@@ -181,7 +664,6 @@ public class AdminPage extends javax.swing.JFrame {
             listPanel.repaint();
         };
 
-        // helper that shows a blank create form in formHolder
         Runnable showCreateForm = () -> {
             formHolder.removeAll();
             formHolder.add(buildCampaignForm(null, formHolder, refreshList));
@@ -189,7 +671,6 @@ public class AdminPage extends javax.swing.JFrame {
             formHolder.repaint();
         };
 
-        // + New Campaign button
         JButton newBtn = new JButton("+ New Campaign");
         newBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         newBtn.setForeground(Color.WHITE);
@@ -219,7 +700,6 @@ public class AdminPage extends javax.swing.JFrame {
         outer.add(listPanel);
         outer.add(Box.createVerticalGlue());
 
-        // populate on first load
         refreshList.run();
 
         JScrollPane scroll = new JScrollPane(outer);
@@ -229,10 +709,22 @@ public class AdminPage extends javax.swing.JFrame {
         return scroll;
     }
 
-    // builds the create/edit campaign form
-    // editCampaign is null when creating a new one
+    /**
+     * Converts a backend date string into dd/MM/yyyy format for display.
+     */
+    private String toDisplayDate(String dbDateTime) {
+        if (dbDateTime == null || dbDateTime.length() < 10) return "";
+        String raw = dbDateTime.substring(0, 10);
+        String[] parts = raw.split("-");
+        if (parts.length != 3) return raw;
+        return parts[2] + "/" + parts[1] + "/" + parts[0];
+    }
+
+    /**
+     * Builds the form used for creating or editing a campaign.
+     */
     private JPanel buildCampaignForm(
-            PromoManager.Campaign editCampaign,
+            AdminCampaignData editCampaign,
             JPanel formHolder,
             Runnable onDone) {
 
@@ -242,8 +734,8 @@ public class AdminPage extends javax.swing.JFrame {
         form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
         form.setAlignmentX(LEFT_ALIGNMENT);
         form.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(20, 22, 20, 22)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(20, 22, 20, 22)
         ));
         form.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
@@ -254,28 +746,24 @@ public class AdminPage extends javax.swing.JFrame {
         form.add(formTitle);
         form.add(Box.createVerticalStrut(16));
 
-        // campaign name
         form.add(makeFormLabel("Campaign Name"));
-        JTextField nameFld = makeFormField(editCampaign != null ? editCampaign.name : "");
+        JTextField nameFld = makeFormField(editCampaign != null ? editCampaign.campaignName : "");
         form.add(nameFld);
         form.add(Box.createVerticalStrut(12));
 
-        // dates row
         JPanel datesRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
         datesRow.setOpaque(false);
         datesRow.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel startLbl = makeFormLabel("Start Date (dd/MM/yyyy)");
         JTextField startFld = makeFormField(
-            editCampaign != null && editCampaign.startDate != null
-                ? editCampaign.startDate.format(PromoManager.DATE_FMT) : "");
+                editCampaign != null ? toDisplayDate(editCampaign.startDatetime) : "");
         startFld.setPreferredSize(new Dimension(150, 34));
         startFld.setMaximumSize(new Dimension(150, 34));
 
         JLabel endLbl = makeFormLabel("End Date (dd/MM/yyyy)");
         JTextField endFld = makeFormField(
-            editCampaign != null && editCampaign.endDate != null
-                ? editCampaign.endDate.format(PromoManager.DATE_FMT) : "");
+                editCampaign != null ? toDisplayDate(editCampaign.endDatetime) : "");
         endFld.setPreferredSize(new Dimension(150, 34));
         endFld.setMaximumSize(new Dimension(150, 34));
 
@@ -292,16 +780,14 @@ public class AdminPage extends javax.swing.JFrame {
         form.add(datesRow);
         form.add(Box.createVerticalStrut(12));
 
-        // status dropdown
         form.add(makeFormLabel("Status"));
-        String[] statusOpts = { "ACTIVE", "ENDED", "TERMINATED" };
+        String[] statusOpts = { "ACTIVE", "SCHEDULED", "ENDED", "TERMINATED" };
         JComboBox<String> statusBox = new JComboBox<>(statusOpts);
         styleCombo(statusBox);
         if (editCampaign != null) statusBox.setSelectedItem(editCampaign.status);
         form.add(statusBox);
         form.add(Box.createVerticalStrut(16));
 
-        // item discount rows
         form.add(makeFormLabel("Item Discounts"));
         form.add(Box.createVerticalStrut(6));
 
@@ -313,7 +799,6 @@ public class AdminPage extends javax.swing.JFrame {
         List<JComboBox<String>> combos = new ArrayList<>();
         List<JTextField> discFlds = new ArrayList<>();
 
-        // syncCombos: keeps each combobox showing only items not already picked by another row
         Runnable[] syncRef = { null };
         syncRef[0] = () -> {
             java.util.Set<String> used = new java.util.HashSet<>();
@@ -332,7 +817,6 @@ public class AdminPage extends javax.swing.JFrame {
             }
         };
 
-        // adds a new item discount row to the form, optionally pre-filled
         Runnable[] addRowRef = { null };
         addRowRef[0] = () -> {
             JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
@@ -359,8 +843,8 @@ public class AdminPage extends javax.swing.JFrame {
             removeBtn.setForeground(RED);
             removeBtn.setBackground(new Color(0x0a1020));
             removeBtn.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(248, 113, 113, 80), 1),
-                BorderFactory.createEmptyBorder(4, 8, 4, 8)
+                    BorderFactory.createLineBorder(new Color(248, 113, 113, 80), 1),
+                    BorderFactory.createEmptyBorder(4, 8, 4, 8)
             ));
             removeBtn.setFocusPainted(false);
             removeBtn.setOpaque(true);
@@ -387,14 +871,13 @@ public class AdminPage extends javax.swing.JFrame {
             syncRef[0].run();
         };
 
-        // if editing, pre-fill existing item rows
-        if (editCampaign != null && !editCampaign.itemDiscounts.isEmpty()) {
-            for (java.util.Map.Entry<String, Double> entry : editCampaign.itemDiscounts.entrySet()) {
+        if (editCampaign != null && !editCampaign.items.isEmpty()) {
+            for (AdminCampaignItemData entry : editCampaign.items) {
                 addRowRef[0].run();
-                // set the item and discount on the row just added
                 int last = combos.size() - 1;
-                combos.get(last).setSelectedItem(entry.getKey());
-                discFlds.get(last).setText(String.valueOf((int) Math.round(entry.getValue())));
+                combos.get(last).putClientProperty("campaignItemId", entry.campaignItemId);
+                combos.get(last).setSelectedItem(entry.productName);
+                discFlds.get(last).setText(String.valueOf((int) Math.round(entry.discountRate)));
             }
             syncRef[0].run();
         }
@@ -402,14 +885,13 @@ public class AdminPage extends javax.swing.JFrame {
         form.add(itemRowsPanel);
         form.add(Box.createVerticalStrut(8));
 
-        // add item row button
         JButton addItemBtn = new JButton("+ Add Item");
         addItemBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
         addItemBtn.setForeground(NEON_LT);
         addItemBtn.setBackground(new Color(0x0a1020));
         addItemBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(5, 14, 5, 14)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(5, 14, 5, 14)
         ));
         addItemBtn.setFocusPainted(false);
         addItemBtn.setOpaque(true);
@@ -419,7 +901,6 @@ public class AdminPage extends javax.swing.JFrame {
         form.add(addItemBtn);
         form.add(Box.createVerticalStrut(20));
 
-        // save / cancel buttons
         JButton saveBtn = new JButton(editCampaign == null ? "Save Campaign" : "Update Campaign");
         saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         saveBtn.setForeground(Color.WHITE);
@@ -434,8 +915,8 @@ public class AdminPage extends javax.swing.JFrame {
         cancelBtn.setForeground(new Color(255, 255, 255, 140));
         cancelBtn.setBackground(new Color(0x0a1020));
         cancelBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 60), 1),
-            BorderFactory.createEmptyBorder(7, 18, 7, 18)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 60), 1),
+                BorderFactory.createEmptyBorder(7, 18, 7, 18)
         ));
         cancelBtn.setFocusPainted(false);
         cancelBtn.setOpaque(true);
@@ -447,36 +928,34 @@ public class AdminPage extends javax.swing.JFrame {
         });
 
         saveBtn.addActionListener(e -> {
-            // validate name
             String cName = nameFld.getText().trim();
             if (cName.isEmpty()) {
                 JOptionPane.showMessageDialog(AdminPage.this,
-                    "Please enter a campaign name.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                        "Please enter a campaign name.", "Validation Error", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            // parse dates (optional)
+
             java.time.LocalDate sd = null, ed = null;
             String sText = startFld.getText().trim();
             String eText = endFld.getText().trim();
             if (!sText.isEmpty()) {
-                try { sd = java.time.LocalDate.parse(sText, PromoManager.DATE_FMT); }
+                try { sd = java.time.LocalDate.parse(sText, ADMIN_DATE_FMT); }
                 catch (java.time.format.DateTimeParseException ex) {
                     JOptionPane.showMessageDialog(AdminPage.this,
-                        "Invalid start date — use dd/MM/yyyy format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                            "Invalid start date — use dd/MM/yyyy format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
             }
             if (!eText.isEmpty()) {
-                try { ed = java.time.LocalDate.parse(eText, PromoManager.DATE_FMT); }
+                try { ed = java.time.LocalDate.parse(eText, ADMIN_DATE_FMT); }
                 catch (java.time.format.DateTimeParseException ex) {
                     JOptionPane.showMessageDialog(AdminPage.this,
-                        "Invalid end date — use dd/MM/yyyy format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+                            "Invalid end date — use dd/MM/yyyy format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
                     return;
                 }
             }
             String status = (String) statusBox.getSelectedItem();
 
-            // build item discount map — skip rows with no item or invalid discount
             LinkedHashMap<String, Double> discounts = new LinkedHashMap<>();
             for (int i = 0; i < combos.size(); i++) {
                 String item = (String) combos.get(i).getSelectedItem();
@@ -484,28 +963,110 @@ public class AdminPage extends javax.swing.JFrame {
                 String dText = discFlds.get(i).getText().trim();
                 try {
                     double pct = Double.parseDouble(dText);
-                    if (pct <= 0 || pct >= 100) continue; // ignore bad values
+                    if (pct <= 0 || pct >= 100) continue;
                     discounts.put(item, pct);
                 } catch (NumberFormatException ignored) {}
             }
 
+            String startIso = sd.toString() + "T00:00:00";
+            String endIso = ed.toString() + "T23:59:59";
+
             if (editCampaign == null) {
-                // create new campaign
-                PromoManager.Campaign c = new PromoManager.Campaign(
-                    PromoManager.generateId(), cName, sd, ed, status);
-                c.itemDiscounts.putAll(discounts);
-                PromoManager.addCampaign(c);
+                Integer id = createCampaignOnBackend(
+                        cName,
+                        startIso,
+                        endIso,
+                        username,
+                        status
+                );
+
+                if (id == null) {
+                    JOptionPane.showMessageDialog(
+                            AdminPage.this,
+                            "Failed to create campaign.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    return;
+                }
+
+                for (int i = 0; i < combos.size(); i++) {
+                    String itemName = (String) combos.get(i).getSelectedItem();
+                    if (itemName == null || itemName.startsWith("--")) continue;
+
+                    String dText = discFlds.get(i).getText().trim();
+                    try {
+                        double pct = Double.parseDouble(dText);
+                        if (pct <= 0 || pct >= 100) continue;
+
+                        String productId = lookupItemIdByName(itemName);
+                        if (productId != null) {
+                            addCampaignItemOnBackend(id, productId, pct);
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+
+                JOptionPane.showMessageDialog(
+                        AdminPage.this,
+                        "Campaign created successfully.",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
+
             } else {
-                // update existing campaign in place
-                editCampaign.name      = cName;
-                editCampaign.startDate = sd;
-                editCampaign.endDate   = ed;
-                editCampaign.status    = status;
-                editCampaign.itemDiscounts.clear();
-                editCampaign.itemDiscounts.putAll(discounts);
+                boolean ok = updateCampaignOnBackend(editCampaign.campaignId, cName, startIso, endIso, status);
+                if (!ok) {
+                    JOptionPane.showMessageDialog(
+                            AdminPage.this,
+                            "Failed to update campaign.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    return;
+                }
+
+                java.util.Set<Integer> seenExistingIds = new java.util.HashSet<>();
+
+                for (int i = 0; i < combos.size(); i++) {
+                    String itemName = (String) combos.get(i).getSelectedItem();
+                    if (itemName == null || itemName.startsWith("--")) continue;
+
+                    String dText = discFlds.get(i).getText().trim();
+                    double pct;
+                    try {
+                        pct = Double.parseDouble(dText);
+                        if (pct <= 0 || pct >= 100) continue;
+                    } catch (NumberFormatException ex) {
+                        continue;
+                    }
+
+                    Object existingIdObj = combos.get(i).getClientProperty("campaignItemId");
+                    if (existingIdObj instanceof Integer) {
+                        Integer campaignItemId = (Integer) existingIdObj;
+                        seenExistingIds.add(campaignItemId);
+                        updateCampaignItemOnBackend(campaignItemId, pct);
+                    } else {
+                        String productId = lookupItemIdByName(itemName);
+                        if (productId != null) {
+                            addCampaignItemOnBackend(editCampaign.campaignId, productId, pct);
+                        }
+                    }
+                }
+
+                for (AdminCampaignItemData oldItem : editCampaign.items) {
+                    if (!seenExistingIds.contains(oldItem.campaignItemId)) {
+                        deleteCampaignItemOnBackend(oldItem.campaignItemId);
+                    }
+                }
+
+                JOptionPane.showMessageDialog(
+                        AdminPage.this,
+                        "Campaign updated successfully.",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE
+                );
             }
 
-            // hide form and refresh the list
             formHolder.removeAll();
             formHolder.revalidate();
             formHolder.repaint();
@@ -522,9 +1083,11 @@ public class AdminPage extends javax.swing.JFrame {
         return form;
     }
 
-    // builds a single campaign display row with edit, terminate and delete buttons
+    /**
+     * Builds a single campaign card for the promotions list.
+     */
     private JPanel buildCampaignRow(
-            PromoManager.Campaign c,
+            AdminCampaignData c,
             JPanel formHolder,
             JPanel listPanel) {
 
@@ -546,31 +1109,30 @@ public class AdminPage extends javax.swing.JFrame {
         row.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        // top line: name + status badge + dates
         JPanel topLine = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
         topLine.setOpaque(false);
         topLine.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel nameLbl = new JLabel(c.name);
+        JLabel nameLbl = new JLabel(c.campaignName);
         nameLbl.setFont(new Font("Trebuchet MS", Font.BOLD, 15));
         nameLbl.setForeground(Color.WHITE);
 
         Color statusColor = "ACTIVE".equals(c.status) ? GREEN
-            : "ENDED".equals(c.status) ? AMBER : RED;
+                : "ENDED".equals(c.status) ? AMBER : RED;
         JLabel statusBadge = new JLabel(c.status);
         statusBadge.setFont(new Font("Segoe UI", Font.BOLD, 9));
         statusBadge.setForeground(statusColor);
         statusBadge.setOpaque(true);
         statusBadge.setBackground(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 30));
         statusBadge.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 100), 1),
-            BorderFactory.createEmptyBorder(2, 7, 2, 7)
+                BorderFactory.createLineBorder(new Color(statusColor.getRed(), statusColor.getGreen(), statusColor.getBlue(), 100), 1),
+                BorderFactory.createEmptyBorder(2, 7, 2, 7)
         ));
 
         String dateRange = "";
-        if (c.startDate != null || c.endDate != null) {
-            String s = c.startDate != null ? c.startDate.format(PromoManager.DATE_FMT) : "open";
-            String e = c.endDate   != null ? c.endDate.format(PromoManager.DATE_FMT)   : "open";
+        if (c.startDatetime != null || c.endDatetime != null) {
+            String s = c.startDatetime != null ? toDisplayDate(c.startDatetime) : "open";
+            String e = c.endDatetime != null ? toDisplayDate(c.endDatetime) : "open";
             dateRange = s + "  to  " + e;
         }
         JLabel dateLbl = new JLabel(dateRange.isEmpty() ? "No dates set" : dateRange);
@@ -583,29 +1145,30 @@ public class AdminPage extends javax.swing.JFrame {
         row.add(topLine);
         row.add(Box.createVerticalStrut(6));
 
-        // items line: shows per-item discounts
         StringBuilder itemsSb = new StringBuilder();
-        for (java.util.Map.Entry<String, Double> entry : c.itemDiscounts.entrySet()) {
+        for (AdminCampaignItemData item : c.items) {
             if (itemsSb.length() > 0) itemsSb.append("   |   ");
-            itemsSb.append(entry.getKey())
-                   .append(": ").append((int) Math.round(entry.getValue())).append("% off");
+            itemsSb.append(item.productName)
+                    .append(": ")
+                    .append((int) Math.round(item.discountRate))
+                    .append("% off");
         }
+
         JLabel itemsLbl = new JLabel(
-            "<html><div style='width:700px'>"
-            + (itemsSb.length() > 0 ? itemsSb.toString() : "No item discounts set")
-            + "</div></html>");
+                "<html><div style='width:700px'>"
+                        + (itemsSb.length() > 0 ? itemsSb.toString() : "No item discounts set")
+                        + "</div></html>");
         itemsLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         itemsLbl.setForeground(new Color(255, 255, 255, 120));
         itemsLbl.setAlignmentX(LEFT_ALIGNMENT);
         row.add(itemsLbl);
         row.add(Box.createVerticalStrut(8));
 
-        // stats + action buttons
         JPanel bottomLine = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 0));
         bottomLine.setOpaque(false);
         bottomLine.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel statsLbl = new JLabel("Hits: " + c.hits + "   Purchases: " + c.purchases);
+        JLabel statsLbl = new JLabel("Campaign ID: " + c.campaignId);
         statsLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         statsLbl.setForeground(new Color(255, 255, 255, 180));
 
@@ -613,17 +1176,16 @@ public class AdminPage extends javax.swing.JFrame {
         JButton deleteBtn = makeTinyBtn("Delete", RED, new Color(248, 113, 113, 60));
 
         editBtn.addActionListener(e -> {
-            // show edit form pre-filled with this campaign's data
             Runnable refreshList = () -> {
                 listPanel.removeAll();
-                List<PromoManager.Campaign> all = PromoManager.getCampaigns();
+                List<AdminCampaignData> all = loadCampaignsFromBackend();
                 if (all.isEmpty()) {
                     JLabel none = new JLabel("No campaigns created yet.");
                     none.setFont(new Font("Segoe UI", Font.PLAIN, 12));
                     none.setForeground(new Color(255, 255, 255, 55));
                     listPanel.add(none);
                 } else {
-                    for (PromoManager.Campaign camp : all) {
+                    for (AdminCampaignData camp : all) {
                         listPanel.add(buildCampaignRow(camp, formHolder, listPanel));
                         listPanel.add(Box.createVerticalStrut(10));
                     }
@@ -638,21 +1200,35 @@ public class AdminPage extends javax.swing.JFrame {
         });
 
         deleteBtn.addActionListener(e -> {
-            int res = JOptionPane.showConfirmDialog(AdminPage.this,
-                "Delete campaign \"" + c.name + "\"? This cannot be undone.",
-                "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            int res = JOptionPane.showConfirmDialog(
+                    AdminPage.this,
+                    "Delete campaign \"" + c.campaignName + "\"? This cannot be undone.",
+                    "Confirm Delete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
             if (res == JOptionPane.YES_OPTION) {
-                PromoManager.removeCampaign(c.id);
-                // rebuild list directly
+                boolean deleted = deleteCampaignFully(c.campaignId);
+                if (!deleted) {
+                    JOptionPane.showMessageDialog(
+                            AdminPage.this,
+                            "Failed to delete campaign.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    return;
+                }
+
                 listPanel.removeAll();
-                List<PromoManager.Campaign> all = PromoManager.getCampaigns();
+                List<AdminCampaignData> all = loadCampaignsFromBackend();
                 if (all.isEmpty()) {
                     JLabel none = new JLabel("No campaigns created yet. Click '+ New Campaign' to start.");
                     none.setFont(new Font("Segoe UI", Font.PLAIN, 12));
                     none.setForeground(new Color(255, 255, 255, 55));
                     listPanel.add(none);
                 } else {
-                    for (PromoManager.Campaign camp : all) {
+                    for (AdminCampaignData camp : all) {
                         listPanel.add(buildCampaignRow(camp, formHolder, listPanel));
                         listPanel.add(Box.createVerticalStrut(10));
                     }
@@ -677,7 +1253,6 @@ public class AdminPage extends javax.swing.JFrame {
         lbl.setAlignmentX(LEFT_ALIGNMENT);
         return lbl;
     }
-
     private JTextField makeFormField(String initial) {
         JTextField fld = new JTextField(initial);
         fld.setBackground(new Color(0x0b1220));
@@ -685,8 +1260,8 @@ public class AdminPage extends javax.swing.JFrame {
         fld.setCaretColor(Color.WHITE);
         fld.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         fld.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 10, 6, 10)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10)
         ));
         fld.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         fld.setAlignmentX(LEFT_ALIGNMENT);
@@ -707,8 +1282,8 @@ public class AdminPage extends javax.swing.JFrame {
         btn.setForeground(fg);
         btn.setBackground(new Color(0x0a1020));
         btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(border, 1),
-            BorderFactory.createEmptyBorder(3, 10, 3, 10)
+                BorderFactory.createLineBorder(border, 1),
+                BorderFactory.createEmptyBorder(3, 10, 3, 10)
         ));
         btn.setFocusPainted(false);
         btn.setOpaque(true);
@@ -716,6 +1291,9 @@ public class AdminPage extends javax.swing.JFrame {
         return btn;
     }
 
+    /**
+     * Builds the tab bar used to switch between admin dashboard sections.
+     */
     private JPanel buildTabBar() {
         JPanel bar = new JPanel();
         bar.setBackground(PANEL);
@@ -749,12 +1327,15 @@ public class AdminPage extends javax.swing.JFrame {
     private void applyTabStyle(JButton btn, boolean active) {
         btn.setForeground(active ? Color.WHITE : new Color(255, 255, 255, 100));
         btn.setBorder(BorderFactory.createCompoundBorder(
-            active ? BorderFactory.createMatteBorder(0, 0, 2, 0, NEON_LT)
-                   : BorderFactory.createEmptyBorder(0, 0, 2, 0),
-            BorderFactory.createEmptyBorder(12, 20, 10, 20)
+                active ? BorderFactory.createMatteBorder(0, 0, 2, 0, NEON_LT)
+                        : BorderFactory.createEmptyBorder(0, 0, 2, 0),
+                BorderFactory.createEmptyBorder(12, 20, 10, 20)
         ));
     }
 
+    /**
+     * Builds the sales report view and generates item sales data by date range.
+     */
     private JScrollPane buildSalesReport() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -762,12 +1343,12 @@ public class AdminPage extends javax.swing.JFrame {
         outer.setBorder(BorderFactory.createEmptyBorder(24, 28, 32, 28));
 
         outer.add(buildReportHeader("REPORTS", "Sales Report",
-            "Items sold across all orders. Filter by date range and click Generate."));
+                "Items sold across all paid orders. Filter by date range and click Generate."));
         outer.add(Box.createVerticalStrut(18));
 
-        JTextField fromFld = new JTextField("01/03/2026", 10);
+        JTextField fromFld = new JTextField("01/03/2025", 10);
         JTextField toFld   = new JTextField(
-            new java.text.SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date()), 10);
+                new SimpleDateFormat("dd/MM/yyyy").format(new java.util.Date()), 10);
         styleReportField(fromFld);
         styleReportField(toFld);
 
@@ -788,12 +1369,12 @@ public class AdminPage extends javax.swing.JFrame {
         toLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
         javax.swing.table.DefaultTableModel salesModel =
-            new javax.swing.table.DefaultTableModel(new Object[0][0], new String[]{ "Product", "Qty Sold", "Unit Price", "Line Total" }) {
-                @Override public boolean isCellEditable(int r, int c) { return false; }
-            };
-        JTable salesTbl = makeStyledTable(new String[]{ "Product", "Qty Sold", "Unit Price", "Line Total" }, new Object[0][0]);
+                new javax.swing.table.DefaultTableModel(new Object[0][0], new String[]{ "Item ID", "Description", "Sold, packs", "Unit price, £", "Total, £" }) {
+                    @Override public boolean isCellEditable(int r, int c) { return false; }
+                };
+        JTable salesTbl = makeStyledTable(new String[]{ "Item ID", "Description", "Sold, packs", "Unit price, £", "Total, £" }, new Object[0][0]);
         salesTbl.setModel(salesModel);
-        reapplyRenderer(salesTbl, 4);
+        reapplyRenderer(salesTbl, 5);
 
         JPanel filterRow = new JPanel();
         filterRow.setOpaque(false);
@@ -812,7 +1393,7 @@ public class AdminPage extends javax.swing.JFrame {
         tblScroll.setAlignmentX(LEFT_ALIGNMENT);
         tblScroll.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
-        JLabel totalLbl = new JLabel("Total Revenue: \u00a30.00");
+        JLabel totalLbl = new JLabel("Total Revenue: £0.00");
         totalLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
         totalLbl.setForeground(GREEN);
         totalLbl.setAlignmentX(LEFT_ALIGNMENT);
@@ -832,35 +1413,67 @@ public class AdminPage extends javax.swing.JFrame {
         genBtn.addActionListener(ev -> {
             salesModel.setRowCount(0);
             noDataLbl.setVisible(false);
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy");
-            java.util.Date from = null, to = null;
-            try { from = sdf.parse(fromFld.getText().trim()); } catch (Exception ex) { }
-            try { to   = sdf.parse(toFld.getText().trim()); }   catch (Exception ex) { }
 
-            java.util.LinkedHashMap<String, Object[]> agg = new java.util.LinkedHashMap<>();
-            for (OrderManager.Order ord : OrderManager.getOrders()) {
-                java.util.Date ordDate = null;
-                try { ordDate = sdf.parse(ord.date); } catch (Exception ex) { }
-                if (ordDate == null) continue;
-                if (from != null && ordDate.before(from)) continue;
-                if (to   != null && ordDate.after(to))   continue;
-                for (CartManager.CartItem it : ord.items) {
-                    Object[] r = agg.getOrDefault(it.name,
-                        new Object[]{ it.name, 0, it.unitPrice, 0.0 });
-                    r[1] = (int)r[1] + it.qty;
-                    r[3] = Math.round(((double)r[3] + it.unitPrice * it.qty) * 100.0) / 100.0;
-                    agg.put(it.name, r);
+            java.util.Date from = parseDate(fromFld.getText().trim());
+            java.util.Date to   = parseDate(toFld.getText().trim());
+
+            if (from == null || to == null) {
+                showErrorDialog("Please enter valid dates in dd/MM/yyyy format.");
+                return;
+            }
+
+            double grandTotal = 0.0;
+
+            String sql =
+                    "SELECT " +
+                            "    oi.product_id, " +
+                            "    COALESCE(si.name, oi.product_description) AS item_name, " +
+                            "    SUM(oi.quantity) AS sold_packs, " +
+                            "    ROUND(MAX(COALESCE(si.price, oi.unit_price)), 2) AS unit_price, " +
+                            "    ROUND(SUM(oi.line_total), 2) AS total_sales " +
+                            "FROM ipos_pu.OrderItems oi " +
+                            "JOIN ipos_pu.Orders o ON o.order_id = oi.order_id " +
+                            "LEFT JOIN ipos_ca.stock_items si ON si.item_id = oi.product_id " +
+                            "WHERE o.order_date BETWEEN ? AND ? " +
+                            "AND EXISTS ( " +
+                            "    SELECT 1 FROM ipos_pu.PaymentTransaction pt " +
+                            "    WHERE pt.order_id = o.order_id AND pt.payment_status = 'SUCCESS' " +
+                            ") " +
+                            "GROUP BY oi.product_id, COALESCE(si.name, oi.product_description) " +
+                            "ORDER BY item_name";
+
+            try (Connection con = DBConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sql)) {
+
+                ps.setTimestamp(1, atStartOfDay(from));
+                ps.setTimestamp(2, atEndOfDay(to));
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        String itemId = rs.getString("product_id");
+                        String desc   = rs.getString("item_name");
+                        int sold      = rs.getInt("sold_packs");
+                        double unit   = rs.getDouble("unit_price");
+                        double total  = rs.getDouble("total_sales");
+
+                        salesModel.addRow(new Object[]{
+                                itemId,
+                                desc,
+                                sold,
+                                String.format("%.2f", unit),
+                                String.format("%.2f", total)
+                        });
+
+                        grandTotal += total;
+                    }
                 }
+
+                totalLbl.setText(String.format("Total Revenue: £%.2f", grandTotal));
+                if (salesModel.getRowCount() == 0) noDataLbl.setVisible(true);
+
+            } catch (Exception ex) {
+                showErrorDialog("Could not generate sales report: " + ex.getMessage());
             }
-            double grandTotal = 0;
-            for (Object[] r : agg.values()) {
-                r[2] = String.format("\u00a3%.2f", r[2]);
-                r[3] = String.format("\u00a3%.2f", r[3]);
-                grandTotal += Double.parseDouble(r[3].toString().replace("\u00a3",""));
-                salesModel.addRow(r);
-            }
-            totalLbl.setText(String.format("Total Revenue: \u00a3%.2f", grandTotal));
-            if (salesModel.getRowCount() == 0) noDataLbl.setVisible(true);
         });
 
         JScrollPane scroll = new JScrollPane(outer);
@@ -870,6 +1483,9 @@ public class AdminPage extends javax.swing.JFrame {
         return scroll;
     }
 
+    /**
+     * Builds the campaign report view showing campaign dates, discounts, and sales.
+     */
     private JScrollPane buildCampaigns() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -877,7 +1493,7 @@ public class AdminPage extends javax.swing.JFrame {
         outer.setBorder(BorderFactory.createEmptyBorder(24, 28, 32, 28));
 
         outer.add(buildReportHeader("REPORTS", "Ad Campaigns Report",
-            "Overview of all promotional campaigns, their schedules, and sales."));
+                "Overview of all promotional campaigns, their schedules, discounts, and campaign-linked sales."));
         outer.add(Box.createVerticalStrut(18));
 
         JButton refreshBtn = makeRefreshButton();
@@ -886,7 +1502,7 @@ public class AdminPage extends javax.swing.JFrame {
         outer.add(btnRow);
         outer.add(Box.createVerticalStrut(12));
 
-        String[] cols = { "Campaign", "Item Discounts", "Start Date", "End Date", "Status", "Purchases" };
+        String[] cols = { "Campaign", "Item Discounts", "Start Date", "End Date", "Status", "Items sold" };
         Object[][] rows = buildCampaignRows();
         JTable tbl = makeStyledTable(cols, rows);
 
@@ -913,26 +1529,72 @@ public class AdminPage extends javax.swing.JFrame {
         return scroll;
     }
 
+
+    /**
+     * Builds the row data used in the campaign report table.
+     */
     private Object[][] buildCampaignRows() {
-        List<PromoManager.Campaign> all = PromoManager.getCampaigns();
-        Object[][] rows = new Object[all.size()][6];
-        for (int i = 0; i < all.size(); i++) {
-            PromoManager.Campaign c = all.get(i);
-            StringBuilder sb = new StringBuilder();
-            for (java.util.Map.Entry<String, Double> e : c.itemDiscounts.entrySet()) {
-                if (sb.length() > 0) sb.append(", ");
-                sb.append(e.getKey()).append(" (").append((int)Math.round(e.getValue())).append("%)");
+        List<Object[]> rows = new ArrayList<>();
+
+        String sql =
+                "SELECT " +
+                        "    pc.campaign_id, " +
+                        "    pc.campaign_name, " +
+                        "    COALESCE(GROUP_CONCAT(DISTINCT CONCAT(si.name, ' (', ROUND(pci.discount_rate, 0), '%)') ORDER BY si.name SEPARATOR ', '), '—') AS item_discounts, " +
+                        "    DATE_FORMAT(pc.start_datetime, '%d/%m/%Y') AS start_date, " +
+                        "    DATE_FORMAT(pc.end_datetime, '%d/%m/%Y') AS end_date, " +
+                        "    pc.status, " +
+                        "   COALESCE(SUM(\n" +
+                        "    CASE WHEN pt.order_id IS NOT NULL THEN oi.quantity ELSE 0 END\n" +
+                        "), 0) AS purchases " +
+                        "FROM ipos_pu.PromotionCampaign pc " +
+                        "LEFT JOIN ipos_pu.PromotionCampaignItems pci ON pc.campaign_id = pci.campaign_id " +
+                        "LEFT JOIN ipos_ca.stock_items si ON si.item_id = pci.product_id " +
+                        "LEFT JOIN ipos_pu.OrderItems oi \n" +
+                        "    ON oi.campaign_id = pc.campaign_id\n" +
+                        "LEFT JOIN ipos_pu.Orders o \n" +
+                        "    ON o.order_id = oi.order_id\n" +
+                        "LEFT JOIN ipos_pu.PaymentTransaction pt \n" +
+                        "    ON pt.order_id = o.order_id \n" +
+                        "    AND pt.payment_status = 'SUCCESS' " +
+                        "GROUP BY pc.campaign_id, pc.campaign_name, pc.start_datetime, pc.end_datetime, pc.status " +
+                        "ORDER BY pc.start_datetime DESC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int campaignId = rs.getInt("campaign_id");
+                String campaignName = rs.getString("campaign_name");
+                String itemDiscounts = rs.getString("item_discounts");
+                String startDate = rs.getString("start_date");
+                String endDate = rs.getString("end_date");
+                String status = rs.getString("status");
+                int purchases = rs.getInt("purchases");
+
+                rows.add(new Object[]{
+                        "Camp " + String.format("%02d", campaignId) + " - " + campaignName,
+                        itemDiscounts,
+                        startDate,
+                        endDate,
+                        status,
+                        purchases
+                });
             }
-            rows[i][0] = c.name;
-            rows[i][1] = sb.length() > 0 ? sb.toString() : "\u2014";
-            rows[i][2] = c.startDate != null ? c.startDate.format(PromoManager.DATE_FMT) : "\u2014";
-            rows[i][3] = c.endDate   != null ? c.endDate.format(PromoManager.DATE_FMT)   : "\u2014";
-            rows[i][4] = c.status;
-            rows[i][5] = c.purchases;
+
+        } catch (Exception ex) {
+            return new Object[0][0];
         }
-        return rows;
+
+        Object[][] arr = new Object[rows.size()][6];
+        for (int i = 0; i < rows.size(); i++) arr[i] = rows.get(i);
+        return arr;
     }
 
+    /**
+     * Builds the customer engagement report view.
+     */
     private JScrollPane buildEngagement() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -940,7 +1602,7 @@ public class AdminPage extends javax.swing.JFrame {
         outer.setBorder(BorderFactory.createEmptyBorder(24, 28, 32, 28));
 
         outer.add(buildReportHeader("REPORTS", "Customer Engagement Report",
-            "Campaign hit counts, purchases, and conversion rate per promotion."));
+                "Campaign hit counts, purchases, and conversion rate per promotion."));
         outer.add(Box.createVerticalStrut(18));
 
         JButton refreshBtn = makeRefreshButton();
@@ -975,21 +1637,66 @@ public class AdminPage extends javax.swing.JFrame {
         return scroll;
     }
 
+    /**
+     * Builds the row data used in the engagement report table.
+     */
     private Object[][] buildEngagementRows() {
-        List<PromoManager.Campaign> all = PromoManager.getCampaigns();
-        Object[][] rows = new Object[all.size()][4];
-        for (int i = 0; i < all.size(); i++) {
-            PromoManager.Campaign c = all.get(i);
-            int h = c.hits, p = c.purchases;
-            String conv = h > 0 ? String.format("%.1f%%", (p / (double) h) * 100.0) : "\u2014";
-            rows[i][0] = c.name;
-            rows[i][1] = h;
-            rows[i][2] = p;
-            rows[i][3] = conv;
+        List<Object[]> rows = new ArrayList<>();
+
+        String sql =
+                "SELECT " +
+                        "    pc.campaign_id, " +
+                        "    pc.campaign_name, " +
+                        "    COALESCE(hit_data.hits, 0) AS hits, " +
+                        "    COALESCE(purchase_data.purchases, 0) AS purchases " +
+                        "FROM ipos_pu.PromotionCampaign pc " +
+                        "LEFT JOIN ( " +
+                        "    SELECT campaign_id, COUNT(*) AS hits " +
+                        "    FROM ipos_pu.ActivityLog " +
+                        "   WHERE event_type IN ('CAMPAIGN_VIEW', 'ITEM_VIEW', 'ADD_TO_CART') " +
+                        "    GROUP BY campaign_id " +
+                        ") hit_data ON hit_data.campaign_id = pc.campaign_id " +
+                        "LEFT JOIN ( " +
+                        "    SELECT campaign_id, SUM(quantity) AS purchases " +
+                        "    FROM ipos_pu.OrderItems " +
+                        "    WHERE campaign_id IS NOT NULL " +
+                        "    GROUP BY campaign_id " +
+                        ") purchase_data ON purchase_data.campaign_id = pc.campaign_id " +
+                        "ORDER BY pc.start_datetime DESC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int campaignId = rs.getInt("campaign_id");
+                String campaignName = rs.getString("campaign_name");
+                int hits = rs.getInt("hits");
+                int purchases = rs.getInt("purchases");
+                String conversion = hits > 0
+                        ? String.format("%.1f%%", (purchases / (double) hits) * 100.0)
+                        : "—";
+
+                rows.add(new Object[]{
+                        "Camp " + String.format("%02d", campaignId) + " - " + campaignName,
+                        hits,
+                        purchases,
+                        conversion
+                });
+            }
+
+        } catch (Exception ex) {
+            return new Object[0][0];
         }
-        return rows;
+
+        Object[][] arr = new Object[rows.size()][4];
+        for (int i = 0; i < rows.size(); i++) arr[i] = rows.get(i);
+        return arr;
     }
 
+    /**
+     * Builds a reusable header block for the report sections.
+     */
     private JPanel buildReportHeader(String sectionLabel, String title, String subtitle) {
         JPanel hdr = new JPanel();
         hdr.setOpaque(false);
@@ -1019,11 +1726,14 @@ public class AdminPage extends javax.swing.JFrame {
         return hdr;
     }
 
+    /**
+     * Creates a table with the shared admin report styling.
+     */
     private JTable makeStyledTable(String[] cols, Object[][] rows) {
         javax.swing.table.DefaultTableModel model =
-            new javax.swing.table.DefaultTableModel(rows, cols) {
-                @Override public boolean isCellEditable(int r, int c) { return false; }
-            };
+                new javax.swing.table.DefaultTableModel(rows, cols) {
+                    @Override public boolean isCellEditable(int r, int c) { return false; }
+                };
         JTable tbl = new JTable(model);
         tbl.setBackground(PANEL);
         tbl.setForeground(new Color(255, 255, 255, 200));
@@ -1047,7 +1757,6 @@ public class AdminPage extends javax.swing.JFrame {
         return tbl;
     }
 
-    // applies the dark row renderer after a model swap
     private void reapplyRenderer(JTable tbl, int colCount) {
         javax.swing.table.DefaultTableCellRenderer rend = new javax.swing.table.DefaultTableCellRenderer() {
             @Override public java.awt.Component getTableCellRendererComponent(
@@ -1070,8 +1779,8 @@ public class AdminPage extends javax.swing.JFrame {
         btn.setForeground(NEON_LT);
         btn.setBackground(new Color(0x0a1020));
         btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(5, 14, 5, 14)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(5, 14, 5, 14)
         ));
         btn.setFocusPainted(false);
         btn.setOpaque(true);
@@ -1085,8 +1794,8 @@ public class AdminPage extends javax.swing.JFrame {
         btn.setForeground(Color.WHITE);
         btn.setBackground(NEON);
         btn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 140), 1),
-            BorderFactory.createEmptyBorder(5, 14, 5, 14)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 140), 1),
+                BorderFactory.createEmptyBorder(5, 14, 5, 14)
         ));
         btn.setFocusPainted(false);
         btn.setOpaque(true);
@@ -1095,6 +1804,9 @@ public class AdminPage extends javax.swing.JFrame {
         return btn;
     }
 
+    /**
+     * Shows a confirmation dialog before printing a report table.
+     */
     private void showPrintDialog(JTable tbl) {
         JDialog dlg = new JDialog(this, "Print Report", true);
         dlg.setUndecorated(true);
@@ -1135,8 +1847,8 @@ public class AdminPage extends javax.swing.JFrame {
         cancelBtn.setForeground(new Color(0x7eb8f7));
         cancelBtn.setBackground(new Color(0x0a1020));
         cancelBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(7, 18, 7, 18)));
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(7, 18, 7, 18)));
         cancelBtn.setFocusPainted(false);
         cancelBtn.setOpaque(true);
         cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -1147,8 +1859,8 @@ public class AdminPage extends javax.swing.JFrame {
         printBtn.setForeground(Color.WHITE);
         printBtn.setBackground(NEON);
         printBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 180), 1),
-            BorderFactory.createEmptyBorder(7, 18, 7, 18)));
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 180), 1),
+                BorderFactory.createEmptyBorder(7, 18, 7, 18)));
         printBtn.setFocusPainted(false);
         printBtn.setOpaque(true);
         printBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -1156,8 +1868,8 @@ public class AdminPage extends javax.swing.JFrame {
             dlg.dispose();
             try {
                 tbl.print(JTable.PrintMode.FIT_WIDTH,
-                    new java.text.MessageFormat("IPOS-PU Report"),
-                    new java.text.MessageFormat("Page {0}"));
+                        new java.text.MessageFormat("IPOS-PU Report"),
+                        new java.text.MessageFormat("Page {0}"));
             } catch (java.awt.print.PrinterException ex) {
                 showErrorDialog("Print failed: " + ex.getMessage());
             }
@@ -1178,6 +1890,9 @@ public class AdminPage extends javax.swing.JFrame {
         dlg.setVisible(true);
     }
 
+    /**
+     * Shows a styled error dialog for user-facing validation or runtime issues.
+     */
     private void showErrorDialog(String message) {
         JDialog dlg = new JDialog(this, "Error", true);
         dlg.setUndecorated(true);
@@ -1209,8 +1924,8 @@ public class AdminPage extends javax.swing.JFrame {
         ok.setForeground(Color.WHITE);
         ok.setBackground(NEON);
         ok.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37,99,168,180),1),
-            BorderFactory.createEmptyBorder(6,18,6,18)));
+                BorderFactory.createLineBorder(new Color(37,99,168,180),1),
+                BorderFactory.createEmptyBorder(6,18,6,18)));
         ok.setFocusPainted(false);
         ok.setOpaque(true);
         ok.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
@@ -1220,8 +1935,8 @@ public class AdminPage extends javax.swing.JFrame {
         inner.setLayout(new javax.swing.BoxLayout(inner, javax.swing.BoxLayout.Y_AXIS));
         inner.setBackground(new java.awt.Color(0x0a1018));
         inner.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
-            javax.swing.BorderFactory.createEmptyBorder(20, 24, 20, 24)));
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+                javax.swing.BorderFactory.createEmptyBorder(20, 24, 20, 24)));
         msg.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
         inner.add(msg);
         inner.add(javax.swing.Box.createVerticalStrut(16));
@@ -1235,14 +1950,44 @@ public class AdminPage extends javax.swing.JFrame {
         dlg.setLocationRelativeTo(this);
         dlg.setVisible(true);
     }
+
     private void styleReportField(javax.swing.JTextField f) {
         f.setBackground(new java.awt.Color(0x0b1220));
         f.setForeground(new java.awt.Color(255, 255, 255, 160));
         f.setCaretColor(NEON_LT);
         f.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
         f.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
-            javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+                javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)));
     }
 
+    private java.util.Date parseDate(String text) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            sdf.setLenient(false);
+            return sdf.parse(text);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private Timestamp atStartOfDay(java.util.Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return new Timestamp(cal.getTimeInMillis());
+    }
+
+    private Timestamp atEndOfDay(java.util.Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.set(Calendar.HOUR_OF_DAY, 23);
+        cal.set(Calendar.MINUTE, 59);
+        cal.set(Calendar.SECOND, 59);
+        cal.set(Calendar.MILLISECOND, 999);
+        return new Timestamp(cal.getTimeInMillis());
+    }
 }

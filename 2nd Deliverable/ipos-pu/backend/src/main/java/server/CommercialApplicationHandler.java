@@ -15,6 +15,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Handles commercial application submissions.
+ */
 public class CommercialApplicationHandler implements HttpHandler {
 
     private final Gson gson = new Gson();
@@ -27,18 +30,13 @@ public class CommercialApplicationHandler implements HttpHandler {
         }
 
         try {
-            // Read JSON body (Java 8 compatible)
             String json = readBody(exchange.getRequestBody());
 
-            // Convert JSON → CommercialApplication
-            // Parse JSON into request model
             CommercialApplicationRequest req =
                     gson.fromJson(json, CommercialApplicationRequest.class);
 
-            // Format directors into one string
             String formattedDirectors = DirectorFormatter.format(req.directors);
 
-            // Build the real CommercialApplication object
             CommercialApplication app = new CommercialApplication();
             app.setCompanyName(req.companyName);
             app.setRegNumber(req.regNumber);
@@ -48,13 +46,9 @@ public class CommercialApplicationHandler implements HttpHandler {
             app.setPhone(req.phone);
             app.setDirectorDetails(formattedDirectors);
 
-            // Get service
             IPUService service = PUServiceFactory.getService();
-
-            // Submit application
             int id = service.submitCommercialApplication(app);
 
-            // Build response
             String response = "{\"success\": true, \"application_id\": " + id + "}";
 
             exchange.getResponseHeaders().add("Content-Type", "application/json");
@@ -73,7 +67,9 @@ public class CommercialApplicationHandler implements HttpHandler {
         }
     }
 
-    // Java 8 compatible request-body reader
+    /**
+     * Reads the full request body from the input stream.
+     */
     private String readBody(InputStream input) throws IOException {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];

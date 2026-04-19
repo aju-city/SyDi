@@ -6,11 +6,15 @@ package ipos_pu;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 
 /**
+ Home page for browsing products, promotions, and customer actions in IPOS-PU.
  *
  * @author nuhur
  */
@@ -26,9 +30,23 @@ public class HomePage extends javax.swing.JFrame {
     private JTable productTable;
     private JLabel promoBannerLbl;
     private JLabel loyaltyBannerLbl;
-    // actual db stock qty per product name
+    private Integer activeCampaignId = null;
+
+    private final java.util.Map<Integer, PromotionCardData> campaignsById = new java.util.HashMap<>();
+
+    /**
+     Stores the data needed to display and apply a promotion campaign.
+     */
+    private static class PromotionCardData {
+        Integer campaignId;
+        String campaignName;
+        String startDatetime;
+        String endDatetime;
+        java.util.Map<String, Double> discountsByProductId = new java.util.HashMap<>();
+        java.util.Map<String, Double> discountsByProductName = new java.util.HashMap<>();
+    }
+
     private final java.util.Map<String, Integer> stockQtyMap   = new java.util.HashMap<>();
-    // per-product order cap (stock_limit column) — customer cannot add more than this per session
     private final java.util.Map<String, Integer> stockLimitMap = new java.util.HashMap<>();
 
     /**
@@ -38,7 +56,6 @@ public class HomePage extends javax.swing.JFrame {
         this.username = username;
         initComponents();
         styleComponents();
-        // Log catalogue view once when page loads
         ActivityLoggerClient.log("CATALOGUE_VIEW", null, null, null);
     }
 
@@ -146,6 +163,9 @@ public class HomePage extends javax.swing.JFrame {
     private static final Color NEON    = new Color(0x2563A8);
     private static final Color NEON_LT = new Color(0x7eb8f7);
 
+    /**
+     Builds and styles the home page layout, navigation, and main content.
+     */
     private void styleComponents() {
         setTitle("IPOS-PU · Home");
         setSize(1280, 760);
@@ -163,7 +183,6 @@ public class HomePage extends javax.swing.JFrame {
                 BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
                 BorderFactory.createEmptyBorder(0, 20, 0, 20)
         ));
-
 
         navPanel.removeAll();
         brandLabel.setText("<html><span style='font-family:Trebuchet MS;font-size:16px;"
@@ -279,7 +298,6 @@ public class HomePage extends javax.swing.JFrame {
         contentPanel.setBackground(BG);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(22, 28, 28, 28));
 
-
         sectionPromoLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
         sectionPromoLabel.setForeground(NEON);
         sectionPromoLabel.setAlignmentX(LEFT_ALIGNMENT);
@@ -300,7 +318,6 @@ public class HomePage extends javax.swing.JFrame {
         cataloguePanel.setBackground(BG);
         cataloguePanel.setAlignmentX(LEFT_ALIGNMENT);
 
-        // no category filter buttons — remove the empty filterRow panel so it doesnt overlap
         cataloguePanel.remove(filterRow);
 
         buildProductTable();
@@ -325,7 +342,6 @@ public class HomePage extends javax.swing.JFrame {
             }
         });
 
-
         getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
                 .put(javax.swing.KeyStroke.getKeyStroke('/'), "focusSearch");
         getRootPane().getActionMap().put("focusSearch", new javax.swing.AbstractAction() {
@@ -336,6 +352,9 @@ public class HomePage extends javax.swing.JFrame {
         });
     }
 
+    /**
+     Styles a navigation button used in the top bar.
+     */
     private void styleNavBtn(JButton btn) {
         btn.setBackground(new Color(0x0b1220));
         btn.setForeground(new Color(255, 255, 255, 160));
@@ -349,13 +368,195 @@ public class HomePage extends javax.swing.JFrame {
         btn.setOpaque(true);
     }
 
+    /**
+     Loads active promotion campaigns from the backend.
+     */
+    private java.util.List<PromotionCardData> loadActiveCampaignsFromBackend() {
+        java.util.List<PromotionCardData> campaigns = new java.util.ArrayList<>();
+        campaignsById.clear();
+
+        try {
+            java.net.URL url = new java.net.URL("http://localhost:8080/api/promotions/active");
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("ACTIVE CAMPAIGNS status = " + status);
+            System.out.println("ACTIVE CAMPAIGNS response = " + response);
+
+            if (status >= 400) {
+                return campaigns;
+            }
+
+            int arrStart = response.indexOf("[");
+            int arrEnd = response.lastIndexOf("]");
+            if (arrStart == -1 || arrEnd == -1 || arrEnd <= arrStart) {
+                return campaigns;
+            }
+
+            String itemsArray = response.substring(arrStart + 1, arrEnd).trim();
+            if (itemsArray.isEmpty()) {
+                return campaigns;
+            }
+
+            String[] objects = itemsArray.split("\\},\\s*\\{");
+            for (String obj : objects) {
+                String clean = obj;
+                if (!clean.startsWith("{")) clean = "{" + clean;
+                if (!clean.endsWith("}")) clean = clean + "}";
+
+                PromotionCardData card = new PromotionCardData();
+
+                String campaignIdStr = extract(clean, "campaignId");
+                String campaignName = extract(clean, "campaignName");
+                String startDatetime = extract(clean, "startDatetime");
+                String endDatetime = extract(clean, "endDatetime");
+
+                if (campaignIdStr == null) continue;
+
+                try {
+                    card.campaignId = Integer.parseInt(campaignIdStr);
+                } catch (Exception ex) {
+                    continue;
+                }
+
+                card.campaignName = campaignName;
+                card.startDatetime = startDatetime;
+                card.endDatetime = endDatetime;
+
+                loadPromotionProductsForCampaign(card);
+
+                campaigns.add(card);
+                campaignsById.put(card.campaignId, card);
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return campaigns;
+    }
+    /**
+     Loads product discounts for a promotion campaign from the backend.
+     */
+    private void loadPromotionProductsForCampaign(PromotionCardData card) {
+        if (card == null || card.campaignId == null) return;
+
+        try {
+            java.net.URL url = new java.net.URL(
+                    "http://localhost:8080/api/promotions/products?campaignId=" + card.campaignId
+            );
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("PROMOTION PRODUCTS status = " + status);
+            System.out.println("PROMOTION PRODUCTS response = " + response);
+
+            if (status >= 400) return;
+
+            int productsKey = response.indexOf("\"products\"");
+            if (productsKey == -1) return;
+
+            int arrStart = response.indexOf("[", productsKey);
+            int arrEnd = response.lastIndexOf("]");
+            if (arrStart == -1 || arrEnd == -1 || arrEnd <= arrStart) return;
+
+            String itemsArray = response.substring(arrStart + 1, arrEnd).trim();
+            if (itemsArray.isEmpty()) return;
+
+            String[] objects = itemsArray.split("\\},\\s*\\{");
+            for (String obj : objects) {
+                String clean = obj;
+                if (!clean.startsWith("{")) clean = "{" + clean;
+                if (!clean.endsWith("}")) clean = clean + "}";
+
+                String productId = extract(clean, "productId");
+                String name = extract(clean, "name");
+                String discountRateStr = extract(clean, "discountRate");
+
+                if (discountRateStr == null) continue;
+
+                try {
+                    double discountRate = Double.parseDouble(discountRateStr);
+
+                    if (productId != null) {
+                        card.discountsByProductId.put(productId, discountRate);
+                    }
+                    if (name != null) {
+                        card.discountsByProductName.put(name, discountRate);
+                    }
+                } catch (Exception ignored) {}
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     Extracts a field value from a simple JSON string.
+     */
+    private String extract(String json, String key) {
+        String search = "\"" + key + "\"";
+        int start = json.indexOf(search);
+        if (start == -1) return null;
+
+        int colon = json.indexOf(":", start);
+        if (colon == -1) return null;
+
+        int valueStart = colon + 1;
+        while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
+            valueStart++;
+        }
+
+        if (valueStart >= json.length()) return null;
+
+        if (json.charAt(valueStart) == '"') {
+            int endQuote = json.indexOf("\"", valueStart + 1);
+            if (endQuote == -1) return null;
+            return json.substring(valueStart + 1, endQuote);
+        }
+
+        int end = valueStart;
+        while (end < json.length()
+                && json.charAt(end) != ','
+                && json.charAt(end) != '}'
+                && !Character.isWhitespace(json.charAt(end))) {
+            end++;
+        }
+
+        return json.substring(valueStart, end);
+    }
+
+    /**
+     Builds the promotion card area using the active campaigns.
+     */
     private void buildPromoCards() {
-        java.util.List<PromoManager.Campaign> active = PromoManager.getActiveCampaigns();
+        promoPanel.removeAll();
+
+        java.util.List<PromotionCardData> active = loadActiveCampaignsFromBackend();
         java.util.List<JPanel> cards = new java.util.ArrayList<>();
-        for (PromoManager.Campaign camp : active) {
-            final String id = camp.id;
+
+        for (PromotionCardData camp : active) {
+            final Integer id = camp.campaignId;
             cards.add(makePromoCard(camp, () -> activatePromo(id)));
         }
+
         if (cards.isEmpty()) {
             promoPanel.setLayout(new BorderLayout());
             JLabel none = new JLabel("No promotions are currently active.");
@@ -366,13 +567,17 @@ public class HomePage extends javax.swing.JFrame {
             promoPanel.setLayout(new GridLayout(1, cards.size(), 14, 0));
             for (JPanel c : cards) promoPanel.add(c);
         }
+
+        promoPanel.revalidate();
+        promoPanel.repaint();
     }
 
-    // builds a promo card for an active campaign showing its name, discounts and dates
-    private JPanel makePromoCard(PromoManager.Campaign camp, Runnable onClick) {
-        // build a short discount summary, e.g. "Aspirin 20%, Paracetamol 15%"
+    /**
+     Builds a promotion card for an active campaign.
+     */
+    private JPanel makePromoCard(PromotionCardData camp, Runnable onClick) {
         StringBuilder discSb = new StringBuilder();
-        for (java.util.Map.Entry<String, Double> e : camp.itemDiscounts.entrySet()) {
+        for (java.util.Map.Entry<String, Double> e : camp.discountsByProductName.entrySet()) {
             if (discSb.length() > 0) discSb.append(", ");
             discSb.append(e.getKey()).append(" ").append((int) Math.round(e.getValue())).append("% off");
         }
@@ -388,7 +593,7 @@ public class HomePage extends javax.swing.JFrame {
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 12, 12));
                 g2.setColor(new Color(37, 99, 168, 76));
                 g2.setStroke(new BasicStroke(1f));
-                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth()-1f, getHeight()-1f, 12, 12));
+                g2.draw(new RoundRectangle2D.Float(0.5f, 0.5f, getWidth() - 1f, getHeight() - 1f, 12, 12));
                 RadialGradientPaint rg = new RadialGradientPaint(
                         new Point(getWidth(), 0), 90,
                         new float[]{0f, 1f},
@@ -407,7 +612,7 @@ public class HomePage extends javax.swing.JFrame {
         tagLbl.setFont(new Font("Segoe UI", Font.BOLD, 9));
         tagLbl.setForeground(NEON_LT);
 
-        JLabel nameLbl = new JLabel(camp.name);
+        JLabel nameLbl = new JLabel(camp.campaignName != null ? camp.campaignName : "Promotion");
         nameLbl.setFont(new Font("Trebuchet MS", Font.BOLD, 14));
         nameLbl.setForeground(Color.WHITE);
 
@@ -415,13 +620,14 @@ public class HomePage extends javax.swing.JFrame {
         descLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         descLbl.setForeground(new Color(255, 255, 255, 115));
 
-        // show the date range if admin has set one
         String dateText = "";
-        if (camp.startDate != null || camp.endDate != null) {
-            String s = camp.startDate != null ? camp.startDate.format(PromoManager.DATE_FMT) : "Now";
-            String e = camp.endDate   != null ? camp.endDate.format(PromoManager.DATE_FMT)   : "Ongoing";
+        if ((camp.startDatetime != null && !camp.startDatetime.isEmpty())
+                || (camp.endDatetime != null && !camp.endDatetime.isEmpty())) {
+            String s = camp.startDatetime != null ? camp.startDatetime.replace("T", " ") : "Now";
+            String e = camp.endDatetime != null ? camp.endDatetime.replace("T", " ") : "Ongoing";
             dateText = s + " — " + e;
         }
+
         JLabel dateLbl = new JLabel(dateText);
         dateLbl.setFont(new Font("Segoe UI", Font.PLAIN, 10));
         dateLbl.setForeground(new Color(255, 255, 255, 80));
@@ -448,9 +654,11 @@ public class HomePage extends javax.swing.JFrame {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 if (onClick != null) onClick.run();
             }
+
             @Override public void mouseEntered(java.awt.event.MouseEvent e) {
                 ctaLbl.setForeground(NEON_LT);
             }
+
             @Override public void mouseExited(java.awt.event.MouseEvent e) {
                 ctaLbl.setForeground(NEON);
             }
@@ -460,8 +668,9 @@ public class HomePage extends javax.swing.JFrame {
         return card;
     }
 
-    // loads products from the database instead of hardcoded fake ones
-    // if the db is down it shows an error popup so the user knows whats happening
+    /**
+     Loads product data and stock information from the database.
+     */
     private void loadProductsFromDB() {
         java.util.List<Object[]> rows = new java.util.ArrayList<>();
         stockQtyMap.clear();
@@ -469,14 +678,13 @@ public class HomePage extends javax.swing.JFrame {
         try (java.sql.Connection con = DBConnection.getConnection();
              java.sql.Statement st = con.createStatement();
              java.sql.ResultSet rs = st.executeQuery(
-                     "SELECT item_id, name, description, package_type, unit, units_per_pack, price, quantity, stock_limit FROM stock_items ORDER BY name")) {
+                     "SELECT item_id, name, description, package_type, unit, units_per_pack, price, quantity, stock_limit FROM ipos_ca.stock_items ORDER BY name")) {
             while (rs.next()) {
                 int qty = rs.getInt("quantity");
                 int lim = rs.getInt("stock_limit");
                 String name = rs.getString("name");
                 stockQtyMap.put(name, qty);
                 stockLimitMap.put(name, lim);
-                // qty=0 → no stock, qty<stock_limit → pharmacy is running low, else in stock
                 String status = qty == 0 ? "NO STOCK"
                         : qty < lim ? "LOW STOCK"
                         : "IN STOCK";
@@ -500,8 +708,10 @@ public class HomePage extends javax.swing.JFrame {
         allProductData = rows.toArray(new Object[0][]);
     }
 
+    /**
+     Builds and styles the product catalogue table.
+     */
     private void buildProductTable() {
-        // columns: name, description, package type, unit, units/pack, price, stock status (colour coded), add button
         String[] cols = {"ITEM_ID", "NAME", "DESCRIPTION", "PACKAGE TYPE", "UNIT", "UNITS/PACK", "PRICE", "STOCK", ""};
         loadProductsFromDB();
         productModel = new DefaultTableModel(allProductData, cols) {
@@ -517,7 +727,6 @@ public class HomePage extends javax.swing.JFrame {
         table.setSelectionBackground(new Color(37, 99, 168, 50));
         table.setSelectionForeground(Color.WHITE);
         table.setFillsViewportHeight(true);
-        // makes columns fill the full available width so nothing hangs outside
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         JTableHeader header = table.getTableHeader();
@@ -528,7 +737,6 @@ public class HomePage extends javax.swing.JFrame {
         header.setReorderingAllowed(false);
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 60)));
 
-        // stock is column 7 — colour rows red when no stock
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(
                     JTable t, Object v, boolean sel, boolean foc, int r, int c) {
@@ -547,7 +755,6 @@ public class HomePage extends javax.swing.JFrame {
                 }
                 setBorder(BorderFactory.createEmptyBorder(0, 16, 0, 16));
                 if (sel) setBackground(new Color(37, 99, 168, 50));
-                // stock column is 7 — colour it green/amber/red/orange
                 if (c == 7) {
                     if ("IN STOCK".equals(stock))   setForeground(new Color(0x4ade80));
                     if ("LOW STOCK".equals(stock))  setForeground(new Color(0xfbbf24));
@@ -557,12 +764,10 @@ public class HomePage extends javax.swing.JFrame {
                 return this;
             }
         };
-        // apply to name, description, package type, unit, units/pack, price, stock (cols 0-6)
         for (int i = 0; i < 8; i++) {
             table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
-        // price renderer — column 6, reads stock from col 7, applies per-item campaign discount
         table.getColumnModel().getColumn(6).setCellRenderer((t, v, sel, foc, r, c) -> {
             String stock = t.getModel().getValueAt(r, 7) != null
                     ? t.getModel().getValueAt(r, 7).toString() : "";
@@ -570,14 +775,20 @@ public class HomePage extends javax.swing.JFrame {
             Color bg = noStock ? new Color(0x1a0808) : (r % 2 == 0 ? PANEL : new Color(0x0a1018));
             if (sel) bg = new Color(37, 99, 168, 50);
 
-            // look up per-item discount for this specific product from the active campaign
             String prodName = t.getModel().getValueAt(r, 1) != null
                     ? t.getModel().getValueAt(r, 1).toString() : "";
-            PromoManager.Campaign activeCamp = PromoManager.getCampaign(activePromo);
-            double discountRate = activeCamp != null
-                    ? PromoManager.getItemDiscountRate(activePromo, prodName) : 1.0;
-            boolean promoApplies  = discountRate < 1.0 && !noStock;
-            boolean loyaltyApplies = OrderManager.isLoyaltyOrder() && !noStock;
+            PromotionCardData activeCamp = campaignsById.get(activeCampaignId);
+            double discountRate = 1.0;
+
+            if (activeCamp != null) {
+                Double pct = activeCamp.discountsByProductName.get(prodName);
+                if (pct != null) {
+                    discountRate = 1.0 - (pct / 100.0);
+                }
+            }
+
+            boolean promoApplies = discountRate < 1.0 && !noStock;
+            boolean loyaltyApplies = OrderManager.isLoyaltyOrder(CartManager.memberEmail) && !noStock;
             boolean applyDiscount = promoApplies || loyaltyApplies;
             JPanel cell = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 16, 0));
             cell.setOpaque(true);
@@ -611,8 +822,6 @@ public class HomePage extends javax.swing.JFrame {
             return cell;
         });
 
-
-        // add button — column 7; OUT when no stock, LIMIT when customer hit order cap
         table.getColumnModel().getColumn(8).setCellRenderer((t, v, sel, foc, r, c) -> {
             String stock = t.getModel().getValueAt(r, 7) != null
                     ? t.getModel().getValueAt(r, 7).toString() : "";
@@ -634,7 +843,6 @@ public class HomePage extends javax.swing.JFrame {
         table.getColumnModel().getColumn(8).setPreferredWidth(90);
         table.getColumnModel().getColumn(8).setMaxWidth(110);
 
-        // pin the narrow columns so package type / unit / units-per-pack / price / stock / add dont balloon
         table.getColumnModel().getColumn(3).setPreferredWidth(110);
         table.getColumnModel().getColumn(3).setMaxWidth(140);
         table.getColumnModel().getColumn(4).setPreferredWidth(80);
@@ -645,13 +853,10 @@ public class HomePage extends javax.swing.JFrame {
         table.getColumnModel().getColumn(6).setMaxWidth(140);
         table.getColumnModel().getColumn(7).setPreferredWidth(110);
         table.getColumnModel().getColumn(7).setMaxWidth(130);
-        // Hide the itemId column (index 0)
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
-        // clicking the add button (column 7) adds item to cart, enforces stock limit,
-        // then refreshes stock status colours across the whole table
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
@@ -664,56 +869,71 @@ public class HomePage extends javax.swing.JFrame {
                 if (col == 8 && row >= 0) {
                     Object stockVal = productModel.getValueAt(row, 7);
                     String stockStr = stockVal != null ? stockVal.toString() : "";
-                    // block if no stock or customer already hit the per-order limit
                     if (!"NO STOCK".equals(stockStr) && !"LIMIT".equals(stockStr)) {
                         String prodName  = productModel.getValueAt(row, 1).toString();
                         String priceStr  = productModel.getValueAt(row, 6).toString()
                                 .replace("£", "").trim();
-                        // extra safety check: cart qty must be under the stock_limit cap
                         int limitQty = stockLimitMap.getOrDefault(prodName, Integer.MAX_VALUE);
                         int cartQty  = 0;
                         for (CartManager.CartItem it : CartManager.getItems()) {
                             if (it.name.equals(prodName)) { cartQty = it.qty; break; }
                         }
-                        if (cartQty >= limitQty) return; // already at the per-order cap
+                        if (cartQty >= limitQty) return;
                         try {
                             double unitPrice = Double.parseDouble(priceStr);
 
-                            double itemRate = PromoManager.getItemDiscountRate(activePromo, prodName);
+                            double itemRate = 1.0;
+                            PromotionCardData activeCamp = campaignsById.get(activeCampaignId);
+                            if (activeCamp != null) {
+                                Double pct = activeCamp.discountsByProductName.get(prodName);
+                                if (pct != null) {
+                                    itemRate = 1.0 - (pct / 100.0);
+                                }
+                            }
+
                             if (itemRate < 1.0) {
                                 unitPrice = Math.round(unitPrice * itemRate * 100.0) / 100.0;
                             }
 
-                            if (OrderManager.isLoyaltyOrder()) {
+                            if (OrderManager.isLoyaltyOrder(CartManager.memberEmail)) {
                                 unitPrice = Math.round(unitPrice * 0.9 * 100.0) / 100.0;
                             }
 
                             String itemId = productModel.getValueAt(row, 0).toString();
-                            CartManager.addItem(itemId, 1);
+                            try {
+                                boolean isGuest = "Guest".equals(username);
+                                String identifier = isGuest ? CartManager.guestToken : CartManager.memberEmail;
 
-                        } catch (java.io.IOException ex) {
-                            JOptionPane.showMessageDialog(
-                                    HomePage.this,
-                                    "Failed to add item to cart.",
-                                    "Error",
-                                    JOptionPane.ERROR_MESSAGE
-                            );
+                                sendAddToBackend(identifier, itemId, 1, isGuest);
+
+                                if (activeCampaignId != null) {
+                                    ActivityLoggerClient.log("ADD_TO_CART", itemId, activeCampaignId, null);
+                                }
+
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                                JOptionPane.showMessageDialog(
+                                        HomePage.this,
+                                        "Failed to add item to cart.",
+                                        "Error",
+                                        JOptionPane.ERROR_MESSAGE
+                                );
+                            }
+
                         } catch (NumberFormatException ignored) {}
 
-                        // recompute stock status for every row so colours update live
                         for (Object[] dataRow : allProductData) {
                             dataRow[7] = computeStockStatus(dataRow[1].toString());
                         }
-                        filterTable(); // repopulates the model with new statuses
+                        filterTable();
 
-                        cartCount = CartManager.getTotalCount();
+                        cartCount++;
                         cartButton.repaint();
                     }
                 }
             }
         });
 
-        //search filter
         searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override public void insertUpdate(javax.swing.event.DocumentEvent e)  { filterTable(); }
             @Override public void removeUpdate(javax.swing.event.DocumentEvent e)  { filterTable(); }
@@ -735,7 +955,6 @@ public class HomePage extends javax.swing.JFrame {
         promoBannerLbl.setVisible(false);
         cataloguePanel.add(promoBannerLbl);
 
-        // loyalty banner shown when the next order will be a 10th milestone
         loyaltyBannerLbl = new JLabel(
                 "  LOYALTY REWARD — This is your 10th order! 10% off everything. Prices below include your discount.");
         loyaltyBannerLbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -747,7 +966,7 @@ public class HomePage extends javax.swing.JFrame {
                 BorderFactory.createEmptyBorder(6, 14, 6, 14)));
         loyaltyBannerLbl.setAlignmentX(LEFT_ALIGNMENT);
         loyaltyBannerLbl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
-        loyaltyBannerLbl.setVisible(OrderManager.isLoyaltyOrder());
+        loyaltyBannerLbl.setVisible(OrderManager.isLoyaltyOrder(CartManager.memberEmail));
         cataloguePanel.add(loyaltyBannerLbl);
 
         JScrollPane sp = new JScrollPane(table);
@@ -761,6 +980,9 @@ public class HomePage extends javax.swing.JFrame {
         cataloguePanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
     }
 
+    /**
+     Shows a dialog with full details for the selected product.
+     */
     private void showProductDetailsDialog(int row) {
         if (row < 0 || row >= productModel.getRowCount()) return;
 
@@ -773,7 +995,9 @@ public class HomePage extends javax.swing.JFrame {
         String price        = String.valueOf(productModel.getValueAt(row, 6));
         String stock        = String.valueOf(productModel.getValueAt(row, 7));
 
-        ActivityLoggerClient.log("PRODUCT_VIEW", itemId, null, null);
+        if (activeCampaignId != null) {
+            ActivityLoggerClient.log("ITEM_VIEW", itemId, activeCampaignId, null);
+        }
 
         JDialog dlg = new JDialog(this, "Product Details", true);
         dlg.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -815,7 +1039,7 @@ public class HomePage extends javax.swing.JFrame {
         root.add(Box.createVerticalStrut(8));
         root.add(makeDetailLabel("Stock Status: " + stock));
 
-        if (activePromo != null) {
+        if (activeCampaignId!= null) {
             PromoManager.Campaign activeCamp = PromoManager.getCampaign(activePromo);
             double discountRate = activeCamp != null
                     ? PromoManager.getItemDiscountRate(activePromo, name) : 1.0;
@@ -859,6 +1083,9 @@ public class HomePage extends javax.swing.JFrame {
         dlg.setVisible(true);
     }
 
+    /**
+     Creates a detail label for the product information dialog.
+     */
     private JLabel makeDetailLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -867,6 +1094,9 @@ public class HomePage extends javax.swing.JFrame {
         return lbl;
     }
 
+    /**
+     Builds the customer services section shown for signed-in users.
+     */
     private JPanel buildCustomerServices() {
         JPanel section = new JPanel();
         section.setOpaque(false);
@@ -894,6 +1124,9 @@ public class HomePage extends javax.swing.JFrame {
         return section;
     }
 
+    /**
+     Builds a clickable service card for the customer services section.
+     */
     private JPanel makeServiceCard(String label, Runnable onClick) {
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -934,8 +1167,9 @@ public class HomePage extends javax.swing.JFrame {
         return card;
     }
 
-    // calculates the status to show in the stock column
-    // db qty drives IN STOCK / LOW STOCK / NO STOCK; cart vs stock_limit drives LIMIT
+    /**
+     Calculates the stock status shown for a product.
+     */
     private String computeStockStatus(String name) {
         int dbQty  = stockQtyMap.getOrDefault(name, 0);
         int lim    = stockLimitMap.getOrDefault(name, Integer.MAX_VALUE);
@@ -944,12 +1178,14 @@ public class HomePage extends javax.swing.JFrame {
             if (it.name.equals(name)) { cartQty = it.qty; break; }
         }
         if (dbQty == 0) return "NO STOCK";
-        if (cartQty >= lim) return "LIMIT";   // customer has hit the per-order cap
-        if (dbQty < lim)    return "LOW STOCK"; // pharmacy running below its own reorder threshold
+        if (cartQty >= lim) return "LIMIT";
+        if (dbQty < lim)    return "LOW STOCK";
         return "IN STOCK";
     }
 
-    // table search filter — matches on name (col 0) or description (col 1)
+    /**
+     Filters the product table using the current search text.
+     */
     private void filterTable() {
         if (productModel == null || allProductData == null) return;
         String query = searchField.getText().toLowerCase().trim();
@@ -965,42 +1201,51 @@ public class HomePage extends javax.swing.JFrame {
         if (productTable != null) productTable.repaint();
     }
 
-    private void activatePromo(String campaignId) {
-        activePromo = campaignId;
-        // tell promo manager which campaign is active so cart can record purchases on checkout
-        PromoManager.setUserActivePromo(campaignId);
-        // count as a hit for the engagement report
-        PromoManager.recordHit(campaignId);
-        // Log campaign view
-        ActivityLoggerClient.log("CAMPAIGN_VIEW", null, null, null);
+    /**
+     Activates a promotion campaign and refreshes the catalogue view.
+     */
+    private void activatePromo(Integer campaignId) {
+        activeCampaignId = campaignId;
+        CartManager.activeCampaignId = campaignId;
+
+        ActivityLoggerClient.log("CAMPAIGN_VIEW", null, campaignId, null);
+
         searchField.setText("");
         filterTable();
         updatePromoBanner();
     }
 
+    /**
+     Updates the promotion banner for the currently active campaign.
+     */
     private void updatePromoBanner() {
         if (promoBannerLbl == null) return;
-        if (activePromo == null) {
+
+        if (activeCampaignId == null) {
             promoBannerLbl.setVisible(false);
             return;
         }
-        PromoManager.Campaign camp = PromoManager.getCampaign(activePromo);
+
+        PromotionCardData camp = campaignsById.get(activeCampaignId);
         if (camp != null) {
-            // build discount summary for the banner
             StringBuilder sb = new StringBuilder();
-            for (java.util.Map.Entry<String, Double> e : camp.itemDiscounts.entrySet()) {
+            for (java.util.Map.Entry<String, Double> e : camp.discountsByProductName.entrySet()) {
                 if (sb.length() > 0) sb.append(", ");
                 sb.append(e.getKey()).append(" (").append((int) Math.round(e.getValue())).append("% off)");
             }
+
             String items = sb.length() > 0 ? sb.toString() : "selected items";
-            promoBannerLbl.setText("  PROMO ACTIVE — " + camp.name
+            promoBannerLbl.setText("  PROMO ACTIVE — " + camp.campaignName
                     + ". Discounts on: " + items + ". Discounted prices shown below.");
         }
+
         promoBannerLbl.setVisible(true);
         cataloguePanel.revalidate();
     }
 
-    // two character from username as the logo
+    /**
+     Returns the initials used in the user avatar.
+     */
     private String getInitials(String name) {
         if (name == null || name.trim().isEmpty()) return "G";
         String[] parts = name.trim().split("\\s+");
@@ -1009,7 +1254,9 @@ public class HomePage extends javax.swing.JFrame {
         return name.substring(0, Math.min(2, name.length())).toUpperCase();
     }
 
-    // avatar with user initials
+    /**
+     Builds the avatar panel shown in the top navigation bar.
+     */
     private JPanel makeAvatarPanel() {
         String initials = getInitials(username);
         JPanel av = new JPanel() {
@@ -1034,6 +1281,50 @@ public class HomePage extends javax.swing.JFrame {
         return av;
     }
 
+    /**
+     Sends an add-to-cart request to the backend for a member or guest cart.
+     */
+    private void sendAddToBackend(String identifier, String itemId, int qty, boolean isGuest) throws Exception {
+        if (isGuest && (CartManager.guestToken == null || CartManager.guestToken.trim().isEmpty())) {
+            CartManager.createGuestCartOnBackend();
+            identifier = CartManager.guestToken;
+        }
+
+        if (!isGuest && (CartManager.memberEmail == null || CartManager.memberEmail.trim().isEmpty())) {
+            throw new Exception("memberEmail is null. Set CartManager.memberEmail when the member logs in.");
+        }
+
+        String json = isGuest
+                ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + qty + "}"
+                : "{\"memberEmail\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + qty + "}";
+
+        URL url = new URL("http://localhost:8080/api/cart/add");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true);
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(json.getBytes());
+        }
+
+        int status = conn.getResponseCode();
+        String response = "";
+        try {
+            response = new String(
+                    (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes()
+            );
+        } catch (Exception ignored) {}
+
+        System.out.println("ADD TO CART status = " + status);
+        System.out.println("ADD TO CART response = " + response);
+        System.out.println("ADD TO CART json = " + json);
+
+        if (status >= 400) {
+            throw new Exception("Failed to add item. HTTP " + status + " -> " + response);
+        }
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel brandLabel;
     private javax.swing.JButton cartButton;
@@ -1048,5 +1339,5 @@ public class HomePage extends javax.swing.JFrame {
     private javax.swing.JTextField searchField;
     private javax.swing.JLabel sectionPromoLabel;
     private javax.swing.JButton signOutButton;
-    // End of variables declaration//GEN-END:variables
+// End of variables declaration//GEN-END:variables
 }

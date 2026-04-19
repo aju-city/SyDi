@@ -7,6 +7,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
+/**
+ * Service layer for catalogue operations.
+ */
 public class CatalogueService {
 
     private final ProductDAO productDAO;

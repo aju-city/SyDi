@@ -19,6 +19,13 @@ import static server.handlers.api.PromotionApi.Codes;
  * POST PromotionApi.Routes.ADMIN_CAMPAIGN_TERMINATE?campaignId=...
  */
 public class AdminPromotionTerminateHandler implements HttpHandler {
+
+    /**
+     * Handles POST requests to terminate a campaign early.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
@@ -60,4 +67,3 @@ public class AdminPromotionTerminateHandler implements HttpHandler {
         }
     }
 }
-

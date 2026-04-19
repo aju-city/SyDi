@@ -29,6 +29,12 @@ import static server.handlers.api.PromotionApi.Codes;
  */
 public class AdminPromotionCampaignItemsHandler implements HttpHandler {
 
+    /**
+     * Routes the request based on the HTTP method.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
@@ -49,6 +55,12 @@ public class AdminPromotionCampaignItemsHandler implements HttpHandler {
         exchange.sendResponseHeaders(405, -1);
     }
 
+    /**
+     * Handles POST requests for adding a product to a campaign.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handleAdd(HttpExchange exchange) throws IOException {
         Map<String, String> qp = RequestUtil.parseQueryParams(exchange);
         Integer campaignIdQ = RequestUtil.getIntParam(qp, "campaignId");
@@ -93,7 +105,7 @@ public class AdminPromotionCampaignItemsHandler implements HttpHandler {
                 return;
             }
 
-            // Conflict rule: same product in overlapping campaigns cannot have different discount rate.
+            // Same product in overlapping campaigns cannot have a different discount rate.
             Timestamp start = campaign.getStartDatetime();
             Timestamp end = campaign.getEndDatetime();
             PromotionCampaignItemsDAO itemsDAO = new PromotionCampaignItemsDAO(conn);
@@ -132,6 +144,12 @@ public class AdminPromotionCampaignItemsHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Handles GET requests for listing all items in a campaign.
+     *
+     * @param exchange the HTTP exchange
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void handleList(HttpExchange exchange) throws IOException {
         Map<String, String> qp = RequestUtil.parseQueryParams(exchange);
         Integer campaignId = RequestUtil.getIntParam(qp, "campaignId");
@@ -169,6 +187,12 @@ public class AdminPromotionCampaignItemsHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Maps a PromotionCampaignItems model to API response data.
+     *
+     * @param i the campaign item model
+     * @return the mapped campaign item data
+     */
     static PromotionApi.CampaignItemData toItemData(PromotionCampaignItems i) {
         PromotionApi.CampaignItemData d = new PromotionApi.CampaignItemData();
         d.campaignItemId = i.getCampaignItemId();
@@ -178,4 +202,3 @@ public class AdminPromotionCampaignItemsHandler implements HttpHandler {
         return d;
     }
 }
-

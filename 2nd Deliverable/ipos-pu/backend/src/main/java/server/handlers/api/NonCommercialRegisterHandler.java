@@ -9,6 +9,9 @@ import model.NonCommercialMember;
 import java.io.IOException;
 import java.sql.Connection;
 
+/**
+ * Handles non-commercial member registration requests.
+ */
 public class NonCommercialRegisterHandler implements HttpHandler {
 
     static class RegisterRequest {

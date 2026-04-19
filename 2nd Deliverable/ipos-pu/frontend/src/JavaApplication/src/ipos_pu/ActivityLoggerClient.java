@@ -4,6 +4,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+ * Sends activity log events to the backend API.
+ */
 public class ActivityLoggerClient {
 
     public static void log(String eventType, String productId, Integer campaignId, Integer orderId) {
@@ -14,7 +17,7 @@ public class ActivityLoggerClient {
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
-            boolean isGuest = (CartManager.memberEmail == null || CartManager.memberEmail.isBlank());
+            boolean isGuest = (CartManager.memberEmail == null || CartManager.memberEmail.trim().isBlank());
 
             StringBuilder json = new StringBuilder("{");
             if (isGuest) {

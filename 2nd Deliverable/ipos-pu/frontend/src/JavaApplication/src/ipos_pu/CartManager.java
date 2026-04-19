@@ -6,21 +6,21 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Shared cart state for IPOS-PU.
- * Keeps an in-memory list for display (CartPage) and syncs additions
- * to the backend API when available.
+ * Keeps an in-memory list for display and stores session cart details.
  *
  * @author nuhur
  */
 public class CartManager {
 
-    // guest cart token returned by the backend (null if member session)
+    // Guest cart token returned by the backend.
     public static String guestToken = null;
 
-    // logged-in member email (null if guest session)
+    // Logged-in member email. Null when using a guest session.
     public static String memberEmail = null;
+
+    public static Integer activeCampaignId = null;
 
     public static class CartItem {
         public String name;
@@ -30,10 +30,10 @@ public class CartManager {
         public int stockLimit;
 
         public CartItem(String name, String category, double unitPrice, int qty, int stockLimit) {
-            this.name       = name;
-            this.category   = category;
-            this.unitPrice  = unitPrice;
-            this.qty        = qty;
+            this.name = name;
+            this.category = category;
+            this.unitPrice = unitPrice;
+            this.qty = qty;
             this.stockLimit = stockLimit;
         }
     }
@@ -41,9 +41,8 @@ public class CartManager {
     private static final List<CartItem> items = new ArrayList<>();
 
     /**
-     * Add a product to the cart.
-     * Updates the local in-memory list and best-effort syncs to the backend.
-     * If the same product is already in the cart its quantity is incremented.
+     * Adds a product to the in-memory cart.
+     * If the item already exists, its quantity is increased.
      */
     public static void addItem(String name, String category, double unitPrice, int qty, int stockLimit) {
         for (CartItem item : items) {
@@ -56,19 +55,24 @@ public class CartManager {
         items.add(new CartItem(name, category, unitPrice, qty, stockLimit));
     }
 
-    /** Returns a snapshot of all current cart items. */
     public static List<CartItem> getItems() {
         return new ArrayList<>(items);
     }
 
-    /** Total number of individual units across all cart lines. */
+    public static void clearItemsOnly() {
+        items.clear();
+    }
+
     public static int getTotalCount() {
         int count = 0;
         for (CartItem item : items) count += item.qty;
         return count;
     }
 
-    /** Update the quantity of an existing item. If newQty <= 0 the item is removed. */
+    /**
+     * Updates the quantity of an item.
+     * Removes the item if the new quantity is zero or less.
+     */
     public static void setQty(String name, int newQty) {
         if (newQty <= 0) {
             removeItem(name);
@@ -82,12 +86,13 @@ public class CartManager {
         }
     }
 
-    /** Remove an item from the cart by name. */
     public static void removeItem(String name) {
         items.removeIf(item -> item.name.equals(name));
     }
 
-    /** Empties the cart (call after a successful order). */
+    /**
+     * Clears the cart and resets the session details.
+     */
     public static void clear() {
         items.clear();
         guestToken = null;
@@ -95,8 +100,7 @@ public class CartManager {
     }
 
     /**
-     * Creates a guest cart session on the backend and stores the returned token
-     * in CartManager.guestToken.
+     * Creates a guest cart on the backend and stores the returned token.
      */
     public static String createGuestCartOnBackend() throws IOException {
         URL url = new URL("http://localhost:8080/api/cart/guest");
@@ -106,7 +110,7 @@ public class CartManager {
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setDoOutput(true);
-        // empty body — server generates the token
+
         conn.getOutputStream().close();
 
         int status = conn.getResponseCode();
@@ -117,19 +121,21 @@ public class CartManager {
         String response = new String(conn.getInputStream().readAllBytes());
         System.out.println("Guest cart response: " + response);
 
-        // parse "guestToken" from JSON: { "guestToken": "GT-xxxxx" }
+        // Parse guestToken from JSON response.
         String token = null;
         int idx = response.indexOf("\"guestToken\"");
         if (idx >= 0) {
             int start = response.indexOf('"', idx + 12) + 1;
-            int end   = response.indexOf('"', start);
+            int end = response.indexOf('"', start);
             if (start > 0 && end > start) {
                 token = response.substring(start, end);
             }
         }
+
         if (token == null || token.isEmpty()) {
             throw new IOException("Could not parse guestToken from response: " + response);
         }
+
         guestToken = token;
         return token;
     }

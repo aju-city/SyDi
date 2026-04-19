@@ -3,11 +3,17 @@ package ipos_pu;
 import java.awt.*;
 import javax.swing.*;
 
+/**
+ Dialog for viewing product details.
+ */
 public class ProductViewDialog extends JDialog {
 
     private static final Color BG     = new Color(0x05080f);
     private static final Color NEON   = new Color(0x2563A8);
 
+    /**
+     Creates the product details dialog.
+     */
     public ProductViewDialog(Frame parent, String name, String description,
                              String packageType, String unit,
                              String unitsPack, String price, String stock) {
@@ -18,6 +24,9 @@ public class ProductViewDialog extends JDialog {
         buildUI(name, description, packageType, unit, unitsPack, price, stock);
     }
 
+    /**
+     Builds the dialog layout and product information display.
+     */
     private void buildUI(String name, String description, String packageType,
                          String unit, String unitsPack, String price, String stock) {
 
@@ -31,7 +40,7 @@ public class ProductViewDialog extends JDialog {
                 g2.setColor(new Color(37, 99, 168, 5));
                 for (int y = 0; y < h; y += 4) g2.drawLine(0, y, w, y);
                 g2.setPaint(new RadialGradientPaint(w / 2f, h / 2f, Math.max(w, h) / 2f,
-                    new float[]{0f, 1f}, new Color[]{new Color(37, 99, 168, 30), new Color(0, 0, 0, 0)}));
+                        new float[]{0f, 1f}, new Color[]{new Color(37, 99, 168, 30), new Color(0, 0, 0, 0)}));
                 g2.fillRect(0, 0, w, h);
                 g2.dispose();
             }
@@ -98,8 +107,8 @@ public class ProductViewDialog extends JDialog {
         closeBtn.setBackground(new Color(0x0b1220));
         closeBtn.setForeground(new Color(255, 255, 255, 160));
         closeBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
-            BorderFactory.createEmptyBorder(8, 18, 8, 18)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
+                BorderFactory.createEmptyBorder(8, 18, 8, 18)
         ));
         closeBtn.addActionListener(e -> dispose());
 

@@ -13,12 +13,14 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 
-
+/**
+ * Cart page for reviewing items and completing checkout.
+ * @author nuhur
+ */
 public class CartPage extends javax.swing.JFrame {
 
     private static final java.util.logging.Logger logger =
-        java.util.logging.Logger.getLogger(CartPage.class.getName());
-
+            java.util.logging.Logger.getLogger(CartPage.class.getName());
 
     private static final Color BG      = new Color(0x05080f);
     private static final Color PANEL   = new Color(0x080e1a);
@@ -26,13 +28,16 @@ public class CartPage extends javax.swing.JFrame {
     private static final Color NEON_LT = new Color(0x7eb8f7);
     private static final Color GREEN   = new Color(0x4ade80);
 
-
     private String username;
     private DefaultTableModel cartModel;
     private JLabel subtotalLbl, totalLbl;
     private JPanel paymentCard, successCard;
     private JTable table;
-
+    private JTextField firstNameField;
+    private JTextField lastNameField;
+    private JTextField addressLine1Field;
+    private JTextField cityField;
+    private JTextField postcodeField;
 
     public CartPage(String username) {
         this.username = username;
@@ -50,7 +55,6 @@ public class CartPage extends javax.swing.JFrame {
     }
 
     public CartPage() { this("Guest"); }
-
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -80,7 +84,9 @@ public class CartPage extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
 
-
+    /**
+     * Extracts a simple JSON value by key.
+     */
     private String extract(String json, String key) {
         String search = "\"" + key + "\"";
         int start = json.indexOf(search);
@@ -91,18 +97,15 @@ public class CartPage extends javax.swing.JFrame {
 
         int valueStart = colon + 1;
 
-        // Skip whitespace
         while (valueStart < json.length() && Character.isWhitespace(json.charAt(valueStart))) {
             valueStart++;
         }
 
-        // Quoted string
         if (json.charAt(valueStart) == '"') {
             int endQuote = json.indexOf("\"", valueStart + 1);
             return json.substring(valueStart + 1, endQuote);
         }
 
-        // Number (supports negative and decimals)
         int end = valueStart;
         while (end < json.length() &&
                 (Character.isDigit(json.charAt(end)) ||
@@ -114,24 +117,113 @@ public class CartPage extends javax.swing.JFrame {
         return json.substring(valueStart, end);
     }
 
-
-
+    /**
+     * Loads cart items from the backend and updates the table totals.
+     */
     private void loadCartItemsFromBackend() {
-        // load from local in-memory CartManager — no backend call needed
         cartModel.setRowCount(0);
-        for (CartManager.CartItem item : CartManager.getItems()) {
-            cartModel.addRow(new Object[]{
-                item.name,                                      // col 0 = ITEM_ID (use name as id)
-                item.name,                                      // col 1 = PRODUCT
-                String.format("\u00a3%.2f", item.unitPrice),  // col 2 = UNIT PRICE
-                item.qty,                                       // col 3 = QTY
-                String.format("\u00a3%.2f", item.unitPrice * item.qty), // col 4 = TOTAL
-                "Remove"                                        // col 5
-            });
+
+        try {
+            boolean isGuest = "Guest".equals(username);
+            String query;
+
+            if (isGuest) {
+                if (CartManager.guestToken == null || CartManager.guestToken.trim().isEmpty()) {
+                    updateTotals();
+                    return;
+                }
+                query = "guestToken=" + CartManager.guestToken;
+            } else {
+                if (CartManager.memberEmail == null || CartManager.memberEmail.trim().isEmpty()) {
+                    updateTotals();
+                    return;
+                }
+                query = "memberEmail=" + CartManager.memberEmail;
+            }
+
+            URL url = new URL("http://localhost:8080/api/cart/get?" + query);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("LOAD CART status = " + status);
+            System.out.println("LOAD CART response = " + response);
+            System.out.println("LOAD CART query = " + query);
+
+            if (status >= 400) {
+                throw new Exception("Failed to load cart. HTTP " + status + " -> " + response);
+            }
+
+            int itemsStart = response.indexOf("[");
+            int itemsEnd = response.lastIndexOf("]");
+            if (itemsStart == -1 || itemsEnd == -1 || itemsEnd <= itemsStart) {
+                updateTotals();
+                return;
+            }
+
+            String itemsArray = response.substring(itemsStart + 1, itemsEnd).trim();
+            if (itemsArray.isEmpty()) {
+                updateTotals();
+                return;
+            }
+
+            java.util.Map<String, Double> promoPrices = loadPromoPrices();
+            boolean loyalty = loyaltyApplies();
+
+            String[] objects = itemsArray.split("\\},\\s*\\{");
+            for (String obj : objects) {
+                String clean = obj;
+                if (!clean.startsWith("{")) clean = "{" + clean;
+                if (!clean.endsWith("}")) clean = clean + "}";
+
+                String itemId = extract(clean, "itemId");
+                String name = extract(clean, "name");
+                String priceStr = extract(clean, "price");
+                String qtyStr = extract(clean, "qty");
+
+                double price = 0.0;
+                int qty = 0;
+
+                try { price = Double.parseDouble(priceStr); } catch (Exception ignored) {}
+                try { qty = Integer.parseInt(qtyStr); } catch (Exception ignored) {}
+
+                Double promoPrice = promoPrices.get(itemId);
+                if (promoPrice != null) {
+                    price = promoPrice;
+                }
+
+                if (loyalty) {
+                    price = Math.round(price * 0.9 * 100.0) / 100.0;
+                }
+
+                cartModel.addRow(new Object[]{
+                        itemId,
+                        name,
+                        String.format("£%.2f", price),
+                        qty,
+                        String.format("£%.2f", price * qty),
+                        "Remove"
+                });
+            }
+
+            updateTotals();
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            updateTotals();
         }
-        updateTotals();
     }
 
+    /**
+     * Rebuilds the page after cart changes.
+     */
     private void refreshCartUI() {
         getContentPane().removeAll();
         buildUI();
@@ -139,6 +231,9 @@ public class CartPage extends javax.swing.JFrame {
         repaint();
     }
 
+    /**
+     * Builds the main cart page layout.
+     */
     private void buildUI() {
         setTitle("IPOS-PU \u00b7 Cart");
         setSize(1280, 760);
@@ -159,22 +254,24 @@ public class CartPage extends javax.swing.JFrame {
         repaint();
     }
 
-
+    /**
+     * Builds the top navigation bar for the cart page.
+     */
     private JPanel buildNav() {
         JPanel nav = new JPanel();
         nav.setLayout(new BoxLayout(nav, BoxLayout.X_AXIS));
         nav.setBackground(PANEL);
         nav.setPreferredSize(new Dimension(0, 58));
         nav.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
-            BorderFactory.createEmptyBorder(0, 20, 0, 20)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
+                BorderFactory.createEmptyBorder(0, 20, 0, 20)
         ));
 
         JLabel brand = new JLabel();
         brand.setText("<html><span style='font-family:Trebuchet MS;font-size:16px;"
-            + "font-weight:bold;color:#ffffff'>IPOS</span>"
-            + "<span style='font-family:Trebuchet MS;font-size:16px;"
-            + "font-weight:bold;color:#7eb8f7'>-PU</span></html>");
+                + "font-weight:bold;color:#ffffff'>IPOS</span>"
+                + "<span style='font-family:Trebuchet MS;font-size:16px;"
+                + "font-weight:bold;color:#7eb8f7'>-PU</span></html>");
         brand.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         brand.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -214,6 +311,9 @@ public class CartPage extends javax.swing.JFrame {
         return nav;
     }
 
+    /**
+     * Builds the main cart content, including cart, delivery, summary, and payment sections.
+     */
     private JPanel buildContent() {
         JPanel outer = new JPanel(new BorderLayout());
         outer.setBackground(BG);
@@ -280,6 +380,9 @@ public class CartPage extends javax.swing.JFrame {
         return outer;
     }
 
+    /**
+     Builds the cart items section, including the table and item action controls.
+     */
     private JPanel buildCartSection() {
         JPanel card = makeCard();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -332,8 +435,8 @@ public class CartPage extends javax.swing.JFrame {
             minus.setOpaque(true);
             minus.setBackground(new Color(0x0b1220));
             minus.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
-                BorderFactory.createEmptyBorder(2, 7, 2, 7)));
+                    BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
+                    BorderFactory.createEmptyBorder(2, 7, 2, 7)));
             minus.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
             JLabel qtyLbl = new JLabel(String.valueOf(qty), SwingConstants.CENTER);
@@ -347,8 +450,8 @@ public class CartPage extends javax.swing.JFrame {
             plus.setOpaque(true);
             plus.setBackground(new Color(0x0b1220));
             plus.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
-                BorderFactory.createEmptyBorder(2, 7, 2, 7)));
+                    BorderFactory.createLineBorder(new Color(37, 99, 168, 100), 1),
+                    BorderFactory.createEmptyBorder(2, 7, 2, 7)));
             plus.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
             p.add(minus);
@@ -358,7 +461,6 @@ public class CartPage extends javax.swing.JFrame {
         });
         table.getColumnModel().getColumn(3).setPreferredWidth(110);
         table.getColumnModel().getColumn(3).setMaxWidth(130);
-
 
         table.getColumnModel().getColumn(5).setCellRenderer((t, v, sel, foc, r, c) -> {
             JButton btn = new JButton("Remove");
@@ -393,6 +495,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Sends a cart quantity update to the backend for a member or guest cart.
+     */
     private void sendQtyUpdateToBackend(String identifier, String itemId, int delta, boolean isGuest) throws Exception {
         String json = isGuest
                 ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\",\"qty\":" + delta + "}"
@@ -414,6 +519,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Sends a remove-item request to the backend for a member or guest cart.
+     */
     private void sendRemoveToBackend(String identifier, String itemId, boolean isGuest) throws Exception {
         String json = isGuest
                 ? "{\"guestToken\":\"" + identifier + "\",\"itemId\":\"" + itemId + "\"}"
@@ -435,7 +543,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
-
+    /**
+     Builds the delivery address section for member checkout.
+     */
     private JPanel buildDeliverySection() {
         JPanel card = makeCard();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -443,24 +553,32 @@ public class CartPage extends javax.swing.JFrame {
         card.add(Box.createVerticalStrut(12));
 
         JPanel row1 = twoColRow();
-        row1.add(labeledField("FIRST NAME", "e.g. John"));
-        row1.add(labeledField("LAST NAME",  "e.g. Smith"));
+        firstNameField = styledField("e.g. John");
+        lastNameField  = styledField("e.g. Smith");
+        row1.add(fieldBlock("FIRST NAME", firstNameField));
+        row1.add(fieldBlock("LAST NAME",  lastNameField));
         card.add(row1);
         card.add(Box.createVerticalStrut(10));
 
-        JPanel addrLine = labeledField("ADDRESS LINE 1", "e.g. 12 Pharmacy Road");
+        addressLine1Field = styledField("e.g. 12 Pharmacy Road");
+        JPanel addrLine = fieldBlock("ADDRESS LINE 1", addressLine1Field);
         addrLine.setAlignmentX(LEFT_ALIGNMENT);
         addrLine.setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
         card.add(addrLine);
         card.add(Box.createVerticalStrut(10));
 
         JPanel row2 = twoColRow();
-        row2.add(labeledField("CITY",     "e.g. London"));
-        row2.add(labeledField("POSTCODE", "e.g. EC1A 1BB"));
+        cityField = styledField("e.g. London");
+        postcodeField = styledField("e.g. EC1A 1BB");
+        row2.add(fieldBlock("CITY",     cityField));
+        row2.add(fieldBlock("POSTCODE", postcodeField));
         card.add(row2);
         return card;
     }
 
+    /**
+     Builds the order summary section using the current cart totals.
+     */
     private JPanel buildSummarySection() {
         JPanel card = makeCard();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -470,8 +588,12 @@ public class CartPage extends javax.swing.JFrame {
         double sub   = calcSubtotal();
         double total = sub;
 
-        subtotalLbl = summaryRow(card, "Subtotal", String.format("\u00a3%.2f", sub), false);
-                      summaryRow(card, "Delivery", "Free",                           false);
+        subtotalLbl = summaryRow(card, "Subtotal", String.format("£%.2f", sub), false);
+        summaryRow(card, "Delivery", "Free", false);
+
+        if (loyaltyApplies()) {
+            summaryRow(card, "Loyalty Discount", "10% applied", true);
+        }
 
         card.add(Box.createVerticalStrut(8));
         JSeparator sep = new JSeparator();
@@ -488,6 +610,10 @@ public class CartPage extends javax.swing.JFrame {
         card.add(totalLbl);
         return card;
     }
+
+    /**
+     Builds the payment section and handles checkout validation and submission.
+     */
     private JPanel buildPaymentSection() {
         boolean guest = "Guest".equals(username);
         JPanel card = makeCard();
@@ -495,21 +621,25 @@ public class CartPage extends javax.swing.JFrame {
         card.add(sectionLabel("PAYMENT DETAILS"));
         card.add(Box.createVerticalStrut(12));
 
-        // guest-only fields
+        // Guest users must provide an email address and delivery address at checkout.
         JTextField emailField   = styledField("Email address");
         JTextField addressField = styledField("Delivery address");
         if (guest) {
-            card.add(fieldBlock("EMAIL", emailField));         card.add(Box.createVerticalStrut(10));
-            card.add(fieldBlock("DELIVERY ADDRESS", addressField)); card.add(Box.createVerticalStrut(14));
+            card.add(fieldBlock("EMAIL", emailField));
+            card.add(Box.createVerticalStrut(10));
+            card.add(fieldBlock("DELIVERY ADDRESS", addressField));
+            card.add(Box.createVerticalStrut(14));
         }
 
-        JTextField   nameField   = styledField("Name on card");
-        JTextField   cardField   = styledField("Card number (16 digits)");
-        JTextField   expiryField = styledField("MM / YY");
+        JTextField nameField   = styledField("Name on card");
+        JTextField cardField   = styledField("Card number (16 digits)");
+        JTextField expiryField = styledField("MM / YY");
         JPasswordField cvvField  = styledPasswordField();
 
-        card.add(fieldBlock("NAME ON CARD",  nameField));   card.add(Box.createVerticalStrut(10));
-        card.add(fieldBlock("CARD NUMBER",   cardField));   card.add(Box.createVerticalStrut(10));
+        card.add(fieldBlock("NAME ON CARD",  nameField));
+        card.add(Box.createVerticalStrut(10));
+        card.add(fieldBlock("CARD NUMBER",   cardField));
+        card.add(Box.createVerticalStrut(10));
 
         JPanel expCvvRow = twoColRow();
         expCvvRow.add(fieldBlock("EXPIRY DATE", expiryField));
@@ -534,6 +664,7 @@ public class CartPage extends javax.swing.JFrame {
         placeBtn.setOpaque(true);
         placeBtn.setAlignmentX(LEFT_ALIGNMENT);
         placeBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 52));
+
         placeBtn.addActionListener(e -> {
             String name  = nameField.getText().trim();
             String cnum  = cardField.getText().replaceAll("\\s", "");
@@ -541,80 +672,145 @@ public class CartPage extends javax.swing.JFrame {
             String cvv   = new String(cvvField.getPassword()).trim();
 
             if (cartModel.getRowCount() == 0) {
-                errLbl.setText("Your cart is empty."); return;
+                errLbl.setText("Your cart is empty.");
+                return;
             }
+
+            String customerEmail;
+            String deliveryAddress;
+
             if (guest) {
                 String em   = emailField.getText().trim();
                 String addr = addressField.getText().trim();
+
                 if (em.isEmpty() || em.equals("Email address") || !em.contains("@")) {
-                    errLbl.setText("Please enter a valid email address."); return;
+                    errLbl.setText("Please enter a valid email address.");
+                    return;
                 }
                 if (addr.isEmpty() || addr.equals("Delivery address")) {
-                    errLbl.setText("Please enter your delivery address."); return;
+                    errLbl.setText("Please enter your delivery address.");
+                    return;
                 }
+
+                customerEmail = em;
+                deliveryAddress = addr;
+
+            } else {
+                String first = firstNameField != null ? firstNameField.getText().trim() : "";
+                String last  = lastNameField != null ? lastNameField.getText().trim() : "";
+                String line1 = addressLine1Field != null ? addressLine1Field.getText().trim() : "";
+                String city  = cityField != null ? cityField.getText().trim() : "";
+                String post  = postcodeField != null ? postcodeField.getText().trim() : "";
+
+                if (first.isEmpty() || first.equals("e.g. John")) {
+                    errLbl.setText("Please enter your first name.");
+                    return;
+                }
+                if (last.isEmpty() || last.equals("e.g. Smith")) {
+                    errLbl.setText("Please enter your last name.");
+                    return;
+                }
+                if (line1.isEmpty() || line1.equals("e.g. 12 Pharmacy Road")) {
+                    errLbl.setText("Please enter your delivery address.");
+                    return;
+                }
+                if (city.isEmpty() || city.equals("e.g. London")) {
+                    errLbl.setText("Please enter your city.");
+                    return;
+                }
+                if (post.isEmpty() || post.equals("e.g. EC1A 1BB")) {
+                    errLbl.setText("Please enter your postcode.");
+                    return;
+                }
+
+                customerEmail = CartManager.memberEmail;
+                deliveryAddress = first + " " + last + ", " + line1 + ", " + city + ", " + post;
             }
+
             if (name.isEmpty() || name.equals("Name on card")) {
-                errLbl.setText("Please enter the name on your card."); return;
+                errLbl.setText("Please enter the name on your card.");
+                return;
             }
             if (cnum.length() != 16 || !cnum.matches("\\d+")) {
-                errLbl.setText("Please enter a valid 16-digit card number."); return;
+                errLbl.setText("Please enter a valid 16-digit card number.");
+                return;
             }
             if (!exp.matches("\\d{2}\\s*/\\s*\\d{2}")) {
-                errLbl.setText("Please enter expiry as MM / YY."); return;
+                errLbl.setText("Please enter expiry as MM / YY.");
+                return;
             }
             if (cvv.length() != 3 || !cvv.matches("\\d+")) {
-                errLbl.setText("Please enter a valid 3-digit CVV."); return;
+                errLbl.setText("Please enter a valid 3-digit CVV.");
+                return;
             }
-
-            ActivityLoggerClient.log("CHECKOUT", null, null, null);
-            OrderManager.placeOrder(CartManager.getItems(), calcSubtotal());
-            ActivityLoggerClient.log("PURCHASE", null, null, null);
-            // if a promo was active record how many items were purchased under it before we clear the cart
-            String activeP = PromoManager.getUserActivePromo();
-            if (activeP != null) {
-                int totalQty = 0;
-                for (CartManager.CartItem it : CartManager.getItems()) totalQty += it.qty;
-                PromoManager.recordPurchase(activeP, totalQty);
-                PromoManager.setUserActivePromo(null);
-            }
-
 
             try {
-                boolean isGuest = guest; // you already have this variable
+                boolean isGuest = guest;
                 String identifier = isGuest ? CartManager.guestToken : CartManager.memberEmail;
+                Integer campaignId = CartManager.activeCampaignId;
 
-                String json = isGuest
-                        ? "{\"guestToken\":\"" + identifier + "\"}"
-                        : "{\"memberEmail\":\"" + identifier + "\"}";
+                String maskedCard = "**** **** **** " + cnum.substring(cnum.length() - 4);
 
-                URL url = new URL("http://localhost:8080/api/cart/clear");
+                StringBuilder json = new StringBuilder("{");
+                if (isGuest) {
+                    json.append("\"guestToken\":\"").append(identifier).append("\"");
+                } else {
+                    json.append("\"memberEmail\":\"").append(identifier).append("\"");
+                }
+                json.append(",\"customerEmail\":\"").append(customerEmail).append("\"");
+                json.append(",\"deliveryAddress\":\"").append(deliveryAddress).append("\"");
+                json.append(",\"paymentMethod\":\"").append("Visa").append("\"");
+                json.append(",\"maskedCardNumber\":\"").append(maskedCard).append("\"");
+                json.append(",\"processorReference\":\"").append("PU-").append(System.currentTimeMillis()).append("\"");
+                json.append(",\"amount\":").append(String.format(java.util.Locale.US, "%.2f", calcSubtotal()));
+
+                if (campaignId != null) {
+                    json.append(",\"campaignId\":").append(campaignId);
+                }
+
+                json.append("}");
+                URL url = new URL("http://localhost:8080/api/checkout");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
-                conn.getOutputStream().write(json.getBytes());
-                conn.getOutputStream().close();
-
-                if (conn.getResponseCode() != 200) {
-                    System.out.println("Failed to clear backend cart");
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(json.toString().getBytes());
                 }
+
+                int status = conn.getResponseCode();
+                String response = "";
+                try {
+                    response = new String(
+                            (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes()
+                    );
+                } catch (Exception ignored) {}
+
+                if (status != 200) {
+                    errLbl.setText("Checkout failed. Please try again.");
+                    System.out.println("Checkout error: " + response);
+                    return;
+                }
+
+                if (guest) {
+                    CartManager.clear();
+                    CartManager.guestToken = null;
+                } else {
+                    CartManager.clearItemsOnly();
+                }
+                CartManager.activeCampaignId = null;
+
+                paymentCard.setVisible(false);
+                successCard.setVisible(true);
+                successCard.revalidate();
+
             } catch (Exception ex) {
                 ex.printStackTrace();
+                errLbl.setText("Checkout failed. Please try again.");
             }
-
-
-            CartManager.clear();
-
-            if (guest) {
-                // regenerate local guest token — no backend call needed
-                CartManager.guestToken = "GT-" + (10000 + (int)(Math.random() * 90000));
-            }
-
-            paymentCard.setVisible(false);
-            successCard.setVisible(true);
-            successCard.revalidate();
         });
+
         card.add(placeBtn);
 
         JLabel secure = new JLabel("Card details stored securely per brief requirements");
@@ -626,6 +822,9 @@ public class CartPage extends javax.swing.JFrame {
         return card;
     }
 
+    /**
+     Builds the success card shown after a completed order.
+     */
     private JPanel buildSuccessCard() {
         JPanel card = makeCard();
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -644,8 +843,8 @@ public class CartPage extends javax.swing.JFrame {
                 FontMetrics fm = g2.getFontMetrics();
                 String check = "OK";
                 g2.drawString(check,
-                    (getWidth()  - fm.stringWidth(check)) / 2,
-                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                        (getWidth()  - fm.stringWidth(check)) / 2,
+                        (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         };
@@ -670,16 +869,16 @@ public class CartPage extends javax.swing.JFrame {
         refLbl.setForeground(NEON_LT);
         refLbl.setAlignmentX(CENTER_ALIGNMENT);
         refLbl.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 70), 1),
-            BorderFactory.createEmptyBorder(8, 20, 8, 20)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 70), 1),
+                BorderFactory.createEmptyBorder(8, 20, 8, 20)
         ));
 
         String noteText = "Guest".equals(username)
-            ? "Your order has been placed. A confirmation will be sent to the email you provided."
-            : "A confirmation email has been sent to your registered address.<br>Use <b>Track Order</b> on the home page to follow your delivery.";
+                ? "Your order has been placed. A confirmation will be sent to the email you provided."
+                : "A confirmation email has been sent to your registered address.<br>Use <b>Track Order</b> on the home page to follow your delivery.";
         JLabel emailNote = new JLabel(
-            "<html><div style='text-align:center;color:rgba(255,255,255,0.5)'>"
-            + noteText + "</div></html>");
+                "<html><div style='text-align:center;color:rgba(255,255,255,0.5)'>"
+                        + noteText + "</div></html>");
         emailNote.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         emailNote.setForeground(new Color(255, 255, 255, 80));
         emailNote.setAlignmentX(CENTER_ALIGNMENT);
@@ -711,6 +910,9 @@ public class CartPage extends javax.swing.JFrame {
         return card;
     }
 
+    /**
+     Calculates the current cart subtotal from the total column values.
+     */
     private double calcSubtotal() {
         double sum = 0.0;
         if (cartModel == null) return 0.0;
@@ -727,6 +929,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Updates the subtotal and total labels after a cart change.
+     */
     private void updateTotals() {
         if (subtotalLbl == null) return;
         double sub = calcSubtotal();
@@ -735,6 +940,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Creates a rounded card panel used for cart page sections.
+     */
     private JPanel makeCard() {
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
@@ -756,6 +964,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Creates a section heading label for the cart page.
+     */
     private JLabel sectionLabel(String text) {
         JLabel lbl = new JLabel(text);
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
@@ -765,6 +976,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Adds a summary row to the order summary section and returns the value label.
+     */
     private JLabel summaryRow(JPanel parent, String key, String val, boolean green) {
         JPanel row = new JPanel(new BorderLayout());
         row.setOpaque(false);
@@ -784,6 +998,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Creates a two-column row layout for grouped form fields.
+     */
     private JPanel twoColRow() {
         JPanel p = new JPanel(new GridLayout(1, 2, 12, 0));
         p.setOpaque(false);
@@ -809,6 +1026,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Creates a labeled field block for forms on the cart page.
+     */
     private JPanel fieldBlock(String label, JTextField field) {
         JPanel p = new JPanel();
         p.setOpaque(false);
@@ -825,6 +1045,9 @@ public class CartPage extends javax.swing.JFrame {
     }
 
 
+    /**
+     Creates a styled text field with placeholder behaviour.
+     */
     private JTextField styledField(String placeholder) {
         JTextField f = new JTextField();
         f.setBackground(new Color(0x0b1220));
@@ -835,11 +1058,11 @@ public class CartPage extends javax.swing.JFrame {
         f.setAlignmentX(LEFT_ALIGNMENT);
         f.setText(placeholder);
         Border normal  = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 10, 6, 10));
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(6, 10, 6, 10));
         Border focused = javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 200), 1),
-            javax.swing.BorderFactory.createEmptyBorder(6, 10, 6, 10));
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 200), 1),
+                javax.swing.BorderFactory.createEmptyBorder(6, 10, 6, 10));
         f.setBorder(normal);
         f.addFocusListener(new java.awt.event.FocusAdapter() {
             @Override public void focusGained(java.awt.event.FocusEvent e) {
@@ -860,6 +1083,9 @@ public class CartPage extends javax.swing.JFrame {
         return f;
     }
 
+    /**
+     Attaches cart table listeners for quantity changes and item removal.
+     */
     private void attachCartListeners() {
         table.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -869,8 +1095,7 @@ public class CartPage extends javax.swing.JFrame {
                 String itemId  = cartModel.getValueAt(row, 0).toString();
                 String prodName = cartModel.getValueAt(row, 1).toString();
                 boolean isGuest  = "Guest".equals(username);
-                String identifier = isGuest ? CartManager.guestToken : username;
-
+                String identifier = isGuest ? CartManager.guestToken : CartManager.memberEmail;
                 if (col == 5) {
                     CartManager.removeItem(prodName);
                     cartModel.removeRow(row);
@@ -881,7 +1106,7 @@ public class CartPage extends javax.swing.JFrame {
                     int relX  = e.getX() - rect.x;
                     int third = rect.width / 3;
                     int qty = cartModel.getValueAt(row, 3) instanceof Integer
-                        ? (Integer) cartModel.getValueAt(row, 3) : 0;
+                            ? (Integer) cartModel.getValueAt(row, 3) : 0;
 
                     if (relX < third) {
                         // minus button
@@ -917,22 +1142,89 @@ public class CartPage extends javax.swing.JFrame {
         });
     }
 
+    /**
+     Parses a price string into a numeric value.
+     */
     private double parsePrice(String s) {
         try { return Double.parseDouble(s.replace("\u00a3", "").trim()); }
         catch (NumberFormatException e) { return 0.0; }
     }
+
+    /**
+     Loads promotional prices for items in the active campaign.
+     */
+    private java.util.Map<String, Double> loadPromoPrices() {
+        java.util.Map<String, Double> promoPrices = new java.util.HashMap<>();
+
+        if (CartManager.activeCampaignId == null) return promoPrices;
+
+        try {
+            URL url = new URL("http://localhost:8080/api/promotions/products?campaignId=" + CartManager.activeCampaignId);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            int status = conn.getResponseCode();
+            String response = "";
+            try {
+                response = new String(
+                        (status >= 200 && status < 300 ? conn.getInputStream() : conn.getErrorStream()).readAllBytes()
+                );
+            } catch (Exception ignored) {}
+
+            System.out.println("CART PROMO PRODUCTS status = " + status);
+            System.out.println("CART PROMO PRODUCTS response = " + response);
+
+            if (status >= 400) return promoPrices;
+
+            int productsKey = response.indexOf("\"products\"");
+            if (productsKey == -1) return promoPrices;
+
+            int arrStart = response.indexOf("[", productsKey);
+            int arrEnd = response.lastIndexOf("]");
+            if (arrStart == -1 || arrEnd == -1 || arrEnd <= arrStart) return promoPrices;
+
+            String itemsArray = response.substring(arrStart + 1, arrEnd).trim();
+            if (itemsArray.isEmpty()) return promoPrices;
+
+            String[] objects = itemsArray.split("\\},\\s*\\{");
+            for (String obj : objects) {
+                String clean = obj;
+                if (!clean.startsWith("{")) clean = "{" + clean;
+                if (!clean.endsWith("}")) clean = clean + "}";
+
+                String productId = extract(clean, "productId");
+                String discountedPriceStr = extract(clean, "discountedPrice");
+
+                if (productId == null || discountedPriceStr == null) continue;
+
+                try {
+                    promoPrices.put(productId, Double.parseDouble(discountedPriceStr));
+                } catch (Exception ignored) {}
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return promoPrices;
+    }
+
+
     private void styleNavBtn(javax.swing.JButton btn) {
         btn.setBackground(new java.awt.Color(0x0b1220));
         btn.setForeground(new java.awt.Color(255, 255, 255, 160));
         btn.setFont(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12));
         btn.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
-            javax.swing.BorderFactory.createEmptyBorder(6, 14, 6, 14)));
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+                javax.swing.BorderFactory.createEmptyBorder(6, 14, 6, 14)));
         btn.setFocusPainted(false);
         btn.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
         btn.setOpaque(true);
     }
 
+    /**
+     Creates the user avatar panel shown in the navigation area.
+     */
     private javax.swing.JPanel makeAvatarPanel() {
         String name = username != null ? username : "G";
         String initials;
@@ -952,7 +1244,7 @@ public class CartPage extends javax.swing.JFrame {
                 g2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
                 java.awt.FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(ini, (getWidth() - fm.stringWidth(ini)) / 2,
-                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                        (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         };
@@ -963,6 +1255,19 @@ public class CartPage extends javax.swing.JFrame {
         return av;
     }
 
+    /**
+     Checks whether the loyalty discount applies to the current order.
+     */
+    private boolean loyaltyApplies() {
+        return !"Guest".equals(username)
+                && CartManager.memberEmail != null
+                && !CartManager.memberEmail.trim().isEmpty()
+                && OrderManager.isLoyaltyOrder(CartManager.memberEmail);
+    }
+
+    /**
+     Creates a styled password field for payment entry.
+     */
     private javax.swing.JPasswordField styledPasswordField() {
         javax.swing.JPasswordField f = new javax.swing.JPasswordField();
         f.setBackground(new java.awt.Color(0x0b1220));
@@ -972,8 +1277,8 @@ public class CartPage extends javax.swing.JFrame {
         f.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, 38));
         f.setAlignmentX(LEFT_ALIGNMENT);
         f.setBorder(javax.swing.BorderFactory.createCompoundBorder(
-            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
-            javax.swing.BorderFactory.createEmptyBorder(6, 10, 6, 10)));
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(37, 99, 168, 80), 1),
+                javax.swing.BorderFactory.createEmptyBorder(6, 10, 6, 10)));
         return f;
     }
 

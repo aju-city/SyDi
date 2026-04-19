@@ -8,10 +8,21 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Handles requests to retrieve cart contents for either a guest
+ * or logged-in member.
+ */
 public class GetCartHandler implements HttpHandler {
 
+    /**
+     * Processes GET requests to load cart items.
+     *
+     * @param exchange the HTTP exchange containing request and response data
+     * @throws IOException if an I/O error occurs while handling the request
+     */
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+
         if (!exchange.getRequestMethod().equalsIgnoreCase("GET")) {
             exchange.sendResponseHeaders(405, -1);
             return;
@@ -19,18 +30,19 @@ public class GetCartHandler implements HttpHandler {
 
         try {
             String query = exchange.getRequestURI().getQuery();
+
             if (query == null) {
                 sendJson(exchange, 400, "{ \"error\": \"Missing query parameters\" }");
                 return;
             }
 
-            // Extract guestToken or memberEmail
             String guestToken = null;
             String memberEmail = null;
 
             if (query.contains("guestToken=")) {
                 guestToken = query.split("guestToken=")[1];
             }
+
             if (query.contains("memberEmail=")) {
                 memberEmail = query.split("memberEmail=")[1];
             }
@@ -40,7 +52,6 @@ public class GetCartHandler implements HttpHandler {
                 return;
             }
 
-            // Fetch items
             List<CartDAO.CartItemView> items;
 
             if (memberEmail != null) {
@@ -49,21 +60,22 @@ public class GetCartHandler implements HttpHandler {
                 items = CartDAO.getCartItems(guestToken);
             }
 
-            // Build JSON
             StringBuilder json = new StringBuilder();
             json.append("{ \"items\": [");
 
             for (int i = 0; i < items.size(); i++) {
-                CartDAO.CartItemView it = items.get(i);
+                CartDAO.CartItemView item = items.get(i);
 
                 json.append("{")
-                        .append("\"itemId\":\"").append(it.itemId).append("\",")
-                        .append("\"name\":\"").append(it.name).append("\",")
-                        .append("\"price\":").append(it.price).append(",")
-                        .append("\"qty\":").append(it.qty)
+                        .append("\"itemId\":\"").append(item.itemId).append("\",")
+                        .append("\"name\":\"").append(item.name).append("\",")
+                        .append("\"price\":").append(item.price).append(",")
+                        .append("\"qty\":").append(item.qty)
                         .append("}");
 
-                if (i < items.size() - 1) json.append(",");
+                if (i < items.size() - 1) {
+                    json.append(",");
+                }
             }
 
             json.append("] }");
@@ -76,8 +88,17 @@ public class GetCartHandler implements HttpHandler {
         }
     }
 
+    /**
+     * Sends a JSON response with the given HTTP status code.
+     *
+     * @param ex the HTTP exchange
+     * @param status the HTTP status code
+     * @param json the JSON response body
+     * @throws IOException if an I/O error occurs while sending the response
+     */
     private void sendJson(HttpExchange ex, int status, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+
         ex.getResponseHeaders().add("Content-Type", "application/json");
         ex.sendResponseHeaders(status, bytes.length);
         ex.getResponseBody().write(bytes);

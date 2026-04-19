@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import javax.swing.*;
 
 /**
- *
- * @author nuhur
+ Dialog for submitting a commercial membership application.
+ @author nuhur
  */
 public class CommercialRegistrationDialog extends javax.swing.JDialog {
 
@@ -21,7 +21,7 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
     private JLabel errorLabel;
 
     /**
-     * Creates new form CommercialRegistrationDialog
+     Creates the commercial registration dialog.
      */
     public CommercialRegistrationDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
@@ -32,6 +32,9 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         setLocationRelativeTo(parent);
     }
 
+    /**
+     Builds and styles the dialog layout and form components.
+     */
     private void styleComponents() {
         final Color BG      = new Color(0x05080f);
         final Color NEON    = new Color(0x2563A8);
@@ -51,7 +54,7 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
                 g2.setColor(new Color(37, 99, 168, 5));
                 for (int y = 0; y < h; y += 4) g2.drawLine(0, y, w, y);
                 g2.setPaint(new RadialGradientPaint(w / 2f, h / 2f, Math.max(w, h) / 2f,
-                    new float[]{0f, 1f}, new Color[]{new Color(37, 99, 168, 40), new Color(0, 0, 0, 0)}));
+                        new float[]{0f, 1f}, new Color[]{new Color(37, 99, 168, 40), new Color(0, 0, 0, 0)}));
                 g2.fillRect(0, 0, w, h);
                 g2.dispose();
             }
@@ -72,7 +75,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         scroll.getVerticalScrollBar().setUnitIncrement(16);
         bg.add(scroll, BorderLayout.CENTER);
 
-        // Title
         commercialFormText.setText("Commercial Application");
         commercialFormText.setFont(new Font("Trebuchet MS", Font.BOLD, 26));
         commercialFormText.setForeground(Color.WHITE);
@@ -83,20 +85,17 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         subtitle.setForeground(new Color(255, 255, 255, 75));
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Field labels
         styleFieldLabel(companyNameText, "COMPANY NAME", NEON);
         styleFieldLabel(companyIDText, "COMPANIES HOUSE ID", NEON);
         styleFieldLabel(businessTypeText, "TYPE OF BUSINESS", NEON);
         styleFieldLabel(businessAddressText, "BUSINESS ADDRESS", NEON);
         styleFieldLabel(emailText, "EMAIL", NEON);
 
-        // Text fields
         styleField(companyNameField, NEON_LT);
         styleField(companyIDField, NEON_LT);
         styleField(BusinessTypeField, NEON_LT);
         styleField(emailField, NEON_LT);
 
-        // Business address text area
         jTextArea1.setBackground(new Color(8, 16, 30));
         jTextArea1.setForeground(Color.WHITE);
         jTextArea1.setCaretColor(Color.WHITE);
@@ -108,7 +107,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         addressScrollPane.setMaximumSize(new Dimension(440, 80));
         addressScrollPane.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Notification preference
         styleFieldLabel(notificationText, "NOTIFICATION PREFERENCE", NEON);
 
         for (JCheckBox cb : new JCheckBox[]{emailCheckBox, mailCheckBox}) {
@@ -125,7 +123,11 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         notifRow.add(emailCheckBox);
         notifRow.add(mailCheckBox);
 
-        // Directors section header
+        commercialFormText.setText("Commercial Application");
+        commercialFormText.setFont(new Font("Trebuchet MS", Font.BOLD, 26));
+        commercialFormText.setForeground(Color.WHITE);
+        commercialFormText.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         companyDirectorText.setText("COMPANY DIRECTORS");
         companyDirectorText.setFont(new Font("Segoe UI", Font.BOLD, 11));
         companyDirectorText.setForeground(new Color(126, 184, 247, 180));
@@ -133,7 +135,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
 
         styleFieldLabel(directorNameText, "NUMBER OF DIRECTORS", NEON);
 
-        // Spinner
         directorSpinner.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         JTextField spinnerEditor = ((JSpinner.DefaultEditor) directorSpinner.getEditor()).getTextField();
         spinnerEditor.setBackground(new Color(8, 16, 30));
@@ -147,7 +148,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         spinnerRow.add(directorNameText);
         spinnerRow.add(directorSpinner);
 
-        // Directors scroll pane
         directorsScrollPane.setOpaque(false);
         directorsScrollPane.getViewport().setBackground(new Color(8, 16, 30));
         directorsScrollPane.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, new Color(37, 99, 168, 60)));
@@ -156,7 +156,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         directorsScrollPane.setAlignmentX(Component.CENTER_ALIGNMENT);
         directorsPanel.setBackground(new Color(8, 16, 30));
 
-        // Error + button
         errorLabel = new JLabel();
         errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         errorLabel.setForeground(new Color(255, 90, 90));
@@ -166,7 +165,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         submitButton.setText("SUBMIT APPLICATION");
         styleButton(submitButton);
 
-        // Assemble layout
         content.add(commercialFormText);
         content.add(Box.createVerticalStrut(6));
         content.add(subtitle);
@@ -210,6 +208,9 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         getContentPane().repaint();
     }
 
+    /**
+     Styles a form label used in the registration dialog.
+     */
     private void styleFieldLabel(JLabel label, String text, Color color) {
         label.setText(text);
         label.setFont(new Font("Segoe UI", Font.BOLD, 10));
@@ -217,6 +218,9 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         label.setAlignmentX(Component.CENTER_ALIGNMENT);
     }
 
+    /**
+     Styles a text field used in the registration form.
+     */
     private void styleField(JTextField field, Color focusColor) {
         field.setBackground(new Color(8, 16, 30));
         field.setForeground(Color.WHITE);
@@ -227,12 +231,12 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         field.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         javax.swing.border.Border normal = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
         );
         javax.swing.border.Border focused = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 2, 0, focusColor),
-            BorderFactory.createEmptyBorder(8, 12, 7, 12)
+                BorderFactory.createMatteBorder(0, 0, 2, 0, focusColor),
+                BorderFactory.createEmptyBorder(8, 12, 7, 12)
         );
         field.setBorder(normal);
         field.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -241,6 +245,9 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         });
     }
 
+    /**
+     Styles the submit button used in the dialog.
+     */
     private void styleButton(JButton btn) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setPreferredSize(new Dimension(440, 50));
@@ -275,13 +282,16 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
                 g2.setFont(c.getFont());
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(btn.getText(),
-                    (w - fm.stringWidth(btn.getText())) / 2,
-                    (h + fm.getAscent() - fm.getDescent()) / 2);
+                        (w - fm.stringWidth(btn.getText())) / 2,
+                        (h + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         });
     }
 
+    /**
+     Displays a validation or submission error in the dialog.
+     */
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
@@ -370,126 +380,126 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(162, 162, 162)
-                        .addComponent(commercialFormText))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(29, 29, 29)
-                        .addComponent(directorNameText, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(directorsScrollPane)
-                            .addComponent(directorSpinner)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(35, 35, 35)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(businessTypeText, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(24, 24, 24)
-                                .addComponent(BusinessTypeField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(businessAddressText, javax.swing.GroupLayout.PREFERRED_SIZE, 118, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(addressScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 312, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(35, 35, 35)
-                        .addComponent(companyIDText)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(companyIDField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(37, 37, 37)
-                        .addComponent(companyNameText, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(18, 18, 18)
-                        .addComponent(companyNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(41, 41, 41)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(notificationText, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(87, 87, 87)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(emailCheckBox)
-                                        .addGap(39, 39, 39)
-                                        .addComponent(mailCheckBox))
-                                    .addComponent(companyDirectorText)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(emailText, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addContainerGap(139, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(submitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(230, 230, 230))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(162, 162, 162)
+                                                .addComponent(commercialFormText))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(29, 29, 29)
+                                                .addComponent(directorNameText, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addGap(18, 18, 18)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(directorsScrollPane)
+                                                        .addComponent(directorSpinner)))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(35, 35, 35)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(businessTypeText, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addGap(24, 24, 24)
+                                                                .addComponent(BusinessTypeField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(businessAddressText, javax.swing.GroupLayout.PREFERRED_SIZE, 118, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(addressScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 312, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(35, 35, 35)
+                                                .addComponent(companyIDText)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                                .addComponent(companyIDField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(37, 37, 37)
+                                                .addComponent(companyNameText, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addGap(18, 18, 18)
+                                                .addComponent(companyNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(layout.createSequentialGroup()
+                                                .addGap(41, 41, 41)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(notificationText, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addGap(87, 87, 87)
+                                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                                        .addGroup(layout.createSequentialGroup()
+                                                                                .addComponent(emailCheckBox)
+                                                                                .addGap(39, 39, 39)
+                                                                                .addComponent(mailCheckBox))
+                                                                        .addComponent(companyDirectorText)))
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(emailText, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addGap(18, 18, 18)
+                                                                .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addContainerGap(139, Short.MAX_VALUE))
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                .addGap(0, 0, Short.MAX_VALUE)
+                                .addComponent(submitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 148, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(230, 230, 230))
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(15, 15, 15)
-                .addComponent(commercialFormText)
-                .addGap(57, 57, 57)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(companyNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(companyNameText))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(companyIDText)
-                    .addComponent(companyIDField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(BusinessTypeField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(businessTypeText))
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(businessAddressText)
-                    .addComponent(addressScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(13, 13, 13)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(emailText)
-                    .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(emailCheckBox)
-                    .addComponent(mailCheckBox)
-                    .addComponent(notificationText))
-                .addGap(18, 18, 18)
-                .addComponent(companyDirectorText)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(directorSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(directorNameText))
-                .addGap(18, 18, 18)
-                .addComponent(directorsScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(submitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(22, 22, 22))
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addGap(15, 15, 15)
+                                .addComponent(commercialFormText)
+                                .addGap(57, 57, 57)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(companyNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(companyNameText))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(companyIDText)
+                                        .addComponent(companyIDField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(BusinessTypeField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(businessTypeText))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(businessAddressText)
+                                        .addComponent(addressScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(13, 13, 13)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(emailText)
+                                        .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(emailCheckBox)
+                                        .addComponent(mailCheckBox)
+                                        .addComponent(notificationText))
+                                .addGap(18, 18, 18)
+                                .addComponent(companyDirectorText)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(directorSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(directorNameText))
+                                .addGap(18, 18, 18)
+                                .addComponent(directorsScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 140, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(submitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(22, 22, 22))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     Submits the commercial application to the backend.
+     */
     private void submitButtonActionPerformed(java.awt.event.ActionEvent evt) {
         System.out.println("SUBMIT CLICKED");
 
-        // Read company fields
         String companyName   = companyNameField.getText().trim();
         String companyId     = companyIDField.getText().trim();
         String businessType  = BusinessTypeField.getText().trim();
         String address       = jTextArea1.getText().trim();
         String email         = emailField.getText().trim();
-        String phone         = "";   // company phone number
+        String phone         = "";
 
-        // Basic validation
         if (companyName.isEmpty() || companyId.isEmpty() || email.isEmpty()) {
             showError("Please complete all required fields.");
             return;
         }
 
-        // Collect directors
         int count = (int) directorSpinner.getValue();
         List<Director> directors = new ArrayList<>();
 
@@ -505,7 +515,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
             ));
         }
 
-        // Build request object
         CommercialApplicationRequest req = new CommercialApplicationRequest();
         req.companyName   = companyName;
         req.regNumber     = companyId;
@@ -515,8 +524,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         req.phone         = phone;
         req.directors     = directors;
 
-        // Convert to JSON
-        // build JSON manually — no Gson needed
         StringBuilder jsonSb = new StringBuilder();
         jsonSb.append("{");
         jsonSb.append("\"companyName\":\"").append(req.companyName).append("\",");
@@ -537,7 +544,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         String json = jsonSb.toString();
 
         try {
-            // Send to backend
             String response = HttpClient.postJson(
                     "http://localhost:8080/api/commercial-application",
                     json
@@ -551,6 +557,9 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         }
     }//GEN-LAST:event_submitButtonActionPerformed
 
+    /**
+     Finds a component inside a container by its assigned name.
+     */
     private Component findComponentByName(Container container, String name) {
         for (Component c : container.getComponents()) {
             if (name.equals(c.getName())) {
@@ -580,8 +589,10 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         // TODO add your handling code here:
     }//GEN-LAST:event_emailFieldActionPerformed
 
+    /**
+     Updates the directors input area when the selected number of directors changes.
+     */
     private void directorSpinnerStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_directorSpinnerStateChanged
-        // TODO add your handling code here:
         int directors = (int) directorSpinner.getValue();
 
         directorsPanel.removeAll();
@@ -627,7 +638,6 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
                         BorderFactory.createEmptyBorder(4, 8, 4, 8)
                 ));
 
-                // Assign the correct name so submitButtonActionPerformed can find it
                 if (pair[0].equals("First Name")) {
                     field.setName("director" + i + "_firstname");
                 } else if (pair[0].equals("Last Name")) {
@@ -649,7 +659,7 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         directorsPanel.revalidate();
         directorsPanel.repaint();
         pack();
-        
+
     }//GEN-LAST:event_directorSpinnerStateChanged
 
     /**
@@ -659,7 +669,7 @@ public class CommercialRegistrationDialog extends javax.swing.JDialog {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {

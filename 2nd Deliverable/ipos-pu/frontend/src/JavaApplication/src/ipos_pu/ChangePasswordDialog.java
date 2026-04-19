@@ -12,8 +12,8 @@ import java.net.URL;
 import javax.swing.*;
 
 /**
- *
- * @author nuhur
+ Password change dialog shown on first login when a user must set a new password.
+ @author nuhur
  */
 public class ChangePasswordDialog extends javax.swing.JDialog {
 
@@ -27,6 +27,9 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
     private JPasswordField confirmPassField;
     private JLabel errorLabel;
 
+    /**
+     Creates the change password dialog for the current user.
+     */
     public ChangePasswordDialog(java.awt.Frame parent, boolean modal, String username) {
         super(parent, modal);
         this.username = username;
@@ -34,14 +37,15 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         setLocationRelativeTo(parent);
     }
 
-    // sets up the dialog layout and form fields
+    /**
+     Builds the dialog layout and password form.
+     */
     private void buildUI() {
         setTitle("Set New Password");
         setSize(460, 480);
         setResizable(false);
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
-        // background with a subtle scanline effect and radial glow in the centre
         JPanel bg = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -53,7 +57,7 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
                 g2.setColor(new Color(37, 99, 168, 5));
                 for (int y = 0; y < h; y += 4) g2.drawLine(0, y, w, y);
                 g2.setPaint(new RadialGradientPaint(w / 2f, h / 2f, Math.max(w, h) / 2f,
-                    new float[]{0f, 1f}, new Color[]{new Color(37, 99, 168, 40), new Color(0, 0, 0, 0)}));
+                        new float[]{0f, 1f}, new Color[]{new Color(37, 99, 168, 40), new Color(0, 0, 0, 0)}));
                 g2.fillRect(0, 0, w, h);
                 g2.dispose();
             }
@@ -62,7 +66,6 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(bg, BorderLayout.CENTER);
 
-        // form content centred in the dialog
         JPanel content = new JPanel();
         content.setOpaque(false);
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
@@ -123,7 +126,9 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         content.add(Box.createVerticalGlue());
     }
 
-    // validates the two fields and opens the home page if everything checks out
+    /**
+     Validates the password fields and submits the new password to the backend.
+     */
     private void handleConfirm() {
         String newPass     = new String(newPassField.getPassword()).trim();
         String confirmPass = new String(confirmPassField.getPassword()).trim();
@@ -155,7 +160,6 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
             String json = "{ \"email\": \"" + username + "\", \"newPassword\": \"" + newPass + "\" }";
             conn.getOutputStream().write(json.getBytes("UTF-8"));
 
-            // Read response
             InputStream is = conn.getInputStream();
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
@@ -179,7 +183,6 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
                 return;
             }
 
-            // Success → close dialog and open HomePage
             java.awt.Window owner = getOwner();
             dispose();
             if (owner != null) owner.dispose();
@@ -191,13 +194,17 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         }
     }
 
-    // shows the red error label with the given message
+    /**
+     Displays an error message in the dialog.
+     */
     private void showError(String message) {
         errorLabel.setText(message);
         errorLabel.setVisible(true);
     }
 
-    // styles a password field with a focus highlight on the bottom border
+    /**
+     Styles a password field used in the dialog.
+     */
     private void styleField(JPasswordField field) {
         field.setBackground(new Color(8, 16, 30));
         field.setForeground(Color.WHITE);
@@ -208,12 +215,12 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         field.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         javax.swing.border.Border normal = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 100)),
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)
         );
         javax.swing.border.Border focused = BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 2, 0, NEON_LT),
-            BorderFactory.createEmptyBorder(8, 12, 7, 12)
+                BorderFactory.createMatteBorder(0, 0, 2, 0, NEON_LT),
+                BorderFactory.createEmptyBorder(8, 12, 7, 12)
         );
         field.setBorder(normal);
         field.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -222,7 +229,9 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
         });
     }
 
-    // custom painted button with a glow effect on hover
+    /**
+     Styles the confirm button used in the dialog.
+     */
     private void styleButton(JButton btn) {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
         btn.setPreferredSize(new Dimension(320, 50));
@@ -256,8 +265,8 @@ public class ChangePasswordDialog extends javax.swing.JDialog {
                 g2.setFont(c.getFont());
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(btn.getText(),
-                    (w - fm.stringWidth(btn.getText())) / 2,
-                    (h + fm.getAscent() - fm.getDescent()) / 2);
+                        (w - fm.stringWidth(btn.getText())) / 2,
+                        (h + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         });

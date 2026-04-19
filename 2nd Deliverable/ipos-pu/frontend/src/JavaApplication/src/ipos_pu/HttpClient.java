@@ -7,8 +7,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+/**
+ Utility methods for sending HTTP requests to the backend API.
+ */
 public class HttpClient {
 
+    /**
+     Sends a POST request with a JSON body and returns the response text.
+     */
     public static String postJson(String urlStr, String json) throws Exception {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -27,6 +33,9 @@ public class HttpClient {
         return readFully(is);
     }
 
+    /**
+     Sends a GET request and returns the response text.
+     */
     public static String get(String urlStr) throws Exception {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -40,6 +49,9 @@ public class HttpClient {
         return readFully(is);
     }
 
+    /**
+     Reads an input stream fully and returns it as a string.
+     */
     private static String readFully(InputStream is) throws Exception {
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];

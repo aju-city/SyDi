@@ -1,5 +1,8 @@
 package model;
 
+/**
+ * Model class representing a product retrieved from ipos_ca.
+ */
 public class Product {
 
     private String itemId;

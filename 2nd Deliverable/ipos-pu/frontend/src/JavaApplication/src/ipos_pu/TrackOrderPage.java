@@ -4,11 +4,19 @@
  */
 package ipos_pu;
 
+import dao.OrderItemsDAO;
+import dao.OrdersDAO;
+import db.DatabaseConnection;
+import model.OrderItems;
+import model.Orders;
+
 import java.awt.*;
 import java.awt.geom.*;
-import javax.swing.*;
-import javax.swing.border.*;
+import java.sql.Connection;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 
 /**
  *
@@ -25,6 +33,16 @@ public class TrackOrderPage extends javax.swing.JFrame {
 
     private final String username;
 
+    private static class OrderWithItems {
+        Orders order;
+        List<OrderItems> items;
+
+        OrderWithItems(Orders order, List<OrderItems> items) {
+            this.order = order;
+            this.items = items;
+        }
+    }
+
     public TrackOrderPage(String username) {
         this.username = username;
         initComponents();
@@ -39,7 +57,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         getContentPane().setBackground(BG);
         getContentPane().setLayout(new BorderLayout());
 
-        getContentPane().add(buildNav(),     BorderLayout.NORTH);
+        getContentPane().add(buildNav(), BorderLayout.NORTH);
         getContentPane().add(buildContent(), BorderLayout.CENTER);
     }
 
@@ -50,13 +68,13 @@ public class TrackOrderPage extends javax.swing.JFrame {
         nav.setPreferredSize(new Dimension(0, 58));
         nav.setLayout(new BoxLayout(nav, BoxLayout.X_AXIS));
         nav.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
-            BorderFactory.createEmptyBorder(0, 20, 0, 20)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(37, 99, 168, 90)),
+                BorderFactory.createEmptyBorder(0, 20, 0, 20)
         ));
 
         JLabel brand = new JLabel("<html><span style='font-family:Trebuchet MS;font-size:16px;"
-            + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
-            + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
+                + "font-weight:bold;color:#ffffff'>IPOS</span><span style='font-family:Trebuchet MS;"
+                + "font-size:16px;font-weight:bold;color:#7eb8f7'>-PU</span></html>");
         brand.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         brand.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -74,13 +92,16 @@ public class TrackOrderPage extends javax.swing.JFrame {
         backBtn.setForeground(new Color(255, 255, 255, 160));
         backBtn.setBackground(new Color(0x0b1220));
         backBtn.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
-            BorderFactory.createEmptyBorder(6, 14, 6, 14)
+                BorderFactory.createLineBorder(new Color(37, 99, 168, 80), 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
         ));
         backBtn.setFocusPainted(false);
         backBtn.setOpaque(true);
         backBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        backBtn.addActionListener(e -> { dispose(); new HomePage(username).setVisible(true); });
+        backBtn.addActionListener(e -> {
+            dispose();
+            new HomePage(username).setVisible(true);
+        });
 
         nav.add(brand);
         nav.add(Box.createHorizontalStrut(16));
@@ -105,8 +126,8 @@ public class TrackOrderPage extends javax.swing.JFrame {
                 g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
                 FontMetrics fm = g2.getFontMetrics();
                 g2.drawString(initials,
-                    (getWidth()  - fm.stringWidth(initials)) / 2,
-                    (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
+                        (getWidth() - fm.stringWidth(initials)) / 2,
+                        (getHeight() + fm.getAscent() - fm.getDescent()) / 2);
                 g2.dispose();
             }
         };
@@ -116,7 +137,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return avatar;
     }
 
-    // loads all orders and shows a tracking card for each one
+    // loads all orders from the database and shows a tracking card for each one
     private JScrollPane buildContent() {
         JPanel outer = new JPanel();
         outer.setBackground(BG);
@@ -133,7 +154,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         titleLbl.setForeground(Color.WHITE);
         titleLbl.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel descLbl = new JLabel("Live order status \u2014 received, dispatched and delivered.");
+        JLabel descLbl = new JLabel("Live order status — received, dispatched and delivered.");
         descLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         descLbl.setForeground(new Color(255, 255, 255, 80));
         descLbl.setAlignmentX(LEFT_ALIGNMENT);
@@ -145,7 +166,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         outer.add(descLbl);
         outer.add(Box.createVerticalStrut(24));
 
-        List<OrderManager.Order> orders = OrderManager.getOrders();
+        List<OrderWithItems> orders = loadOrdersFromDatabase();
 
         // empty state if no orders have been placed yet
         if (orders.isEmpty()) {
@@ -169,7 +190,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
             msg.setForeground(new Color(255, 255, 255, 80));
             msg.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-            JLabel hint = new JLabel("Orders you place this session will appear here");
+            JLabel hint = new JLabel("Orders saved to your account will appear here");
             hint.setFont(new Font("Segoe UI", Font.PLAIN, 11));
             hint.setForeground(new Color(255, 255, 255, 45));
             hint.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -182,7 +203,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
             emptyPanel.add(stack);
             outer.add(emptyPanel);
         } else {
-            for (OrderManager.Order order : orders) {
+            for (OrderWithItems order : orders) {
                 outer.add(buildOrderCard(order));
                 outer.add(Box.createVerticalStrut(14));
             }
@@ -197,8 +218,36 @@ public class TrackOrderPage extends javax.swing.JFrame {
         return scroll;
     }
 
+    private List<OrderWithItems> loadOrdersFromDatabase() {
+        List<OrderWithItems> results = new ArrayList<>();
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            OrdersDAO ordersDAO = new OrdersDAO(conn);
+            OrderItemsDAO orderItemsDAO = new OrderItemsDAO(conn);
+
+            String memberEmail = CartManager.memberEmail;
+
+            if (memberEmail != null && !memberEmail.trim().isEmpty()) {
+                List<Orders> orders = ordersDAO.getOrdersByMemberEmail(memberEmail);
+
+                for (Orders order : orders) {
+                    List<OrderItems> items = orderItemsDAO.getItemsByOrderId(order.getOrderId());
+                    results.add(new OrderWithItems(order, items));
+                }
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return results;
+    }
+
     // one card per order with order details on the left and the step tracker on the right
-    private JPanel buildOrderCard(OrderManager.Order order) {
+    private JPanel buildOrderCard(OrderWithItems entry) {
+        Orders order = entry.order;
+        List<OrderItems> items = entry.items;
+
         JPanel card = new JPanel() {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
@@ -214,7 +263,7 @@ public class TrackOrderPage extends javax.swing.JFrame {
         card.setOpaque(false);
         card.setLayout(new BorderLayout(0, 0));
         card.setBorder(BorderFactory.createEmptyBorder(18, 22, 18, 22));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 180));
         card.setAlignmentX(LEFT_ALIGNMENT);
 
         // order info stacked on the left side of the card
@@ -222,19 +271,26 @@ public class TrackOrderPage extends javax.swing.JFrame {
         info.setOpaque(false);
         info.setLayout(new BoxLayout(info, BoxLayout.Y_AXIS));
 
-        JLabel orderIdLbl = new JLabel(order.orderId);
+        String orderIdText = "ORD-" + order.getOrderId();
+        String dateText = order.getOrderDate() != null
+                ? new SimpleDateFormat("dd/MM/yyyy").format(order.getOrderDate())
+                : "—";
+        String itemsSummary = buildItemsSummary(items);
+        String totalText = order.getTotalAmount() != null ? "£" + order.getTotalAmount() : "£0.00";
+
+        JLabel orderIdLbl = new JLabel(orderIdText);
         orderIdLbl.setFont(new Font("Trebuchet MS", Font.BOLD, 16));
         orderIdLbl.setForeground(Color.WHITE);
 
-        JLabel dateLbl = new JLabel("Placed: " + order.date);
+        JLabel dateLbl = new JLabel("Placed: " + dateText);
         dateLbl.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         dateLbl.setForeground(new Color(255, 255, 255, 70));
 
-        JLabel itemsLbl = new JLabel("<html><div style='width:420px'>" + order.itemsSummary + "</div></html>");
+        JLabel itemsLbl = new JLabel("<html><div style='width:420px'>" + itemsSummary + "</div></html>");
         itemsLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         itemsLbl.setForeground(new Color(255, 255, 255, 140));
 
-        JLabel totalLbl = new JLabel("Total: " + order.total);
+        JLabel totalLbl = new JLabel("Total: " + totalText);
         totalLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
         totalLbl.setForeground(NEON_LT);
 
@@ -246,9 +302,39 @@ public class TrackOrderPage extends javax.swing.JFrame {
         info.add(Box.createVerticalStrut(6));
         info.add(totalLbl);
 
-        card.add(info,                      BorderLayout.CENTER);
-        card.add(buildStepTracker(order.stage), BorderLayout.EAST);
+        card.add(info, BorderLayout.CENTER);
+        card.add(buildStepTracker(mapStatusToStage(order.getStatus())), BorderLayout.EAST);
         return card;
+    }
+
+    private String buildItemsSummary(List<OrderItems> items) {
+        if (items == null || items.isEmpty()) return "No items found";
+
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < items.size(); i++) {
+            OrderItems item = items.get(i);
+
+            if (i > 0) sb.append(", ");
+
+            String name = item.getProductDescription() != null && !item.getProductDescription().trim().isEmpty()
+                    ? item.getProductDescription()
+                    : item.getProductId();
+
+            sb.append(name).append(" x").append(item.getQuantity());
+        }
+
+        return sb.toString();
+    }
+
+    private int mapStatusToStage(String status) {
+        if (status == null) return 0;
+
+        String s = status.trim().toLowerCase();
+
+        if (s.equals("delivered")) return 2;
+        if (s.equals("dispatched") || s.equals("out for delivery")) return 1;
+        return 0;
     }
 
     // draws the three step tracker showing which stage the order is at
@@ -270,8 +356,8 @@ public class TrackOrderPage extends javax.swing.JFrame {
 
                 // connecting lines between the dots green if that stage is done
                 for (int i = 0; i < labels.length - 1; i++) {
-                    int x1   = margin + i * step + dotR;
-                    int x2   = margin + (i + 1) * step - dotR;
+                    int x1 = margin + i * step + dotR;
+                    int x2 = margin + (i + 1) * step - dotR;
                     boolean done = activeStage > i;
                     g2.setStroke(new BasicStroke(2f));
                     g2.setColor(done ? GREEN : new Color(37, 99, 168, 60));
@@ -280,8 +366,8 @@ public class TrackOrderPage extends javax.swing.JFrame {
 
                 // each dot is either done active or upcoming with different styles
                 for (int i = 0; i < labels.length; i++) {
-                    int cx     = margin + i * step;
-                    boolean done   = activeStage > i;
+                    int cx = margin + i * step;
+                    boolean done = activeStage > i;
                     boolean active = activeStage == i;
 
                     if (done) {
